@@ -153,15 +153,9 @@ export default function Auth() {
       } else {
         toast({
           title: "Account Created!",
-          description: "Please check your email to verify your account before logging in."
+          description: "Your account has been created and you are now logged in."
         });
-        // Clear form
-        setFormData({
-          email: '',
-          password: '',
-          fullName: '',
-          confirmPassword: ''
-        });
+        // No need to clear form as user will be redirected automatically
       }
     } catch (error) {
       toast({
