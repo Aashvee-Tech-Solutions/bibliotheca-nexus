@@ -19,14 +19,34 @@ import {
   Eye,
   Upload,
   Save,
-  Settings
+  Settings,
+  Image
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Admin = () => {
+  const { user, isAdmin, loading } = useAuth();
   const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState("overview");
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-brand-primary"></div>
+      </div>
+    );
+  }
+  
+  // Redirect if not authenticated or not admin
+  if (!user || !isAdmin) {
+    return <Navigate to="/auth" replace />;
+  }
 
   // Sample data - in real app this would come from a backend
   const [books, setBooks] = useState([
@@ -78,7 +98,8 @@ const Admin = () => {
     description: "",
     price: "",
     isbn: "",
-    status: "Draft"
+    status: "Draft",
+    coverImage: ""
   });
 
   const [newAuthor, setNewAuthor] = useState({
@@ -86,7 +107,8 @@ const Admin = () => {
     email: "",
     bio: "",
     specialization: "",
-    affiliation: ""
+    affiliation: "",
+    profileImage: ""
   });
 
   const stats = {
@@ -113,7 +135,8 @@ const Admin = () => {
       description: "",
       price: "",
       isbn: "",
-      status: "Draft"
+      status: "Draft",
+      coverImage: ""
     });
     toast({
       title: "Book Added Successfully",
@@ -135,7 +158,8 @@ const Admin = () => {
       email: "",
       bio: "",
       specialization: "",
-      affiliation: ""
+      affiliation: "",
+      profileImage: ""
     });
     toast({
       title: "Author Added Successfully",
@@ -157,6 +181,50 @@ const Admin = () => {
       title: "Author Deleted",
       description: "The author has been removed from the system.",
     });
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'book' | 'author') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    setUploadingImage(true);
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from(type === 'book' ? 'covers' : 'avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from(type === 'book' ? 'covers' : 'avatars')
+        .getPublicUrl(filePath);
+
+      if (type === 'book') {
+        setNewBook({...newBook, coverImage: data.publicUrl});
+      } else {
+        setNewAuthor({...newAuthor, profileImage: data.publicUrl});
+      }
+
+      toast({
+        title: "Image Uploaded Successfully",
+        description: `${type === 'book' ? 'Cover' : 'Profile'} image has been uploaded.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   return (
@@ -360,6 +428,28 @@ const Admin = () => {
                         onChange={(e) => setNewBook({...newBook, description: e.target.value})}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="coverImage">Cover Image</Label>
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          id="coverImage"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'book')}
+                          disabled={uploadingImage}
+                        />
+                        {uploadingImage && <span className="text-sm text-muted-foreground">Uploading...</span>}
+                      </div>
+                      {newBook.coverImage && (
+                        <div className="mt-2">
+                          <img 
+                            src={newBook.coverImage} 
+                            alt="Cover preview" 
+                            className="w-20 h-28 object-cover rounded border"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex justify-end space-x-2">
                     <Button variant="outline">Cancel</Button>
@@ -488,6 +578,28 @@ const Admin = () => {
                         value={newAuthor.bio}
                         onChange={(e) => setNewAuthor({...newAuthor, bio: e.target.value})}
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="profileImage">Profile Image</Label>
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          id="profileImage"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'author')}
+                          disabled={uploadingImage}
+                        />
+                        {uploadingImage && <span className="text-sm text-muted-foreground">Uploading...</span>}
+                      </div>
+                      {newAuthor.profileImage && (
+                        <div className="mt-2">
+                          <img 
+                            src={newAuthor.profileImage} 
+                            alt="Profile preview" 
+                            className="w-20 h-20 object-cover rounded-full border"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex justify-end space-x-2">

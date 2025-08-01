@@ -30,13 +30,11 @@ const Header = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-primary to-brand-accent flex items-center justify-center">
-                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                  <div className="w-3 h-3 bg-brand-primary rounded-full"></div>
-                </div>
-              </div>
-            </div>
+            <img 
+              src="/lovable-uploads/c5d60559-9d4f-48a1-a4a2-715ff0a79ce1.png" 
+              alt="AASHVEE Publishers Logo" 
+              className="w-10 h-10"
+            />
             <div>
               <h1 className="text-xl font-bold text-brand-primary">AASHVEE</h1>
               <p className="text-xs text-muted-foreground -mt-1">Publishers</p>

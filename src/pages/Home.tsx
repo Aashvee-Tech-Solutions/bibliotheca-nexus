@@ -260,9 +260,11 @@ const Home = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-brand-primary to-brand-accent flex items-center justify-center">
-                  <div className="w-4 h-4 bg-white rounded-full"></div>
-                </div>
+                <img 
+                  src="/lovable-uploads/c5d60559-9d4f-48a1-a4a2-715ff0a79ce1.png" 
+                  alt="AASHVEE Publishers Logo" 
+                  className="w-8 h-8"
+                />
                 <div>
                   <h3 className="text-lg font-bold">AASHVEE</h3>
                   <p className="text-xs opacity-75">Publishers</p>

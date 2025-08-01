@@ -59,8 +59,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAdminRole = async (userId: string) => {
     try {
+      // Get the current session to access user email
+      const { data: { session } } = await supabase.auth.getSession();
+      
       // Check if user email is the admin email
-      if (user?.email === 'info@aashveetech.com') {
+      if (session?.user?.email === 'info@aashveetech.com') {
         setIsAdmin(true);
         return;
       }
