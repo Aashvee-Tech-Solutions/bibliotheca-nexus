@@ -1,10 +1,20 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Book, Users, Package, Phone, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Menu, X, Book, Users, Package, Phone, Settings, User, LogOut, FileText } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user, signOut, isAdmin, loading } = useAuth();
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -45,12 +55,57 @@ const Header = () => {
                 <span>{item.name}</span>
               </Link>
             ))}
-            <Link to="/admin">
-              <Button variant="outline" size="sm" className="ml-4">
-                <Settings className="w-4 h-4 mr-2" />
-                Admin
-              </Button>
-            </Link>
+            
+            {/* Auth-based navigation */}
+            {!loading && (
+              <>
+                {user ? (
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/submit')}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Submit Manuscript
+                    </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <User className="w-4 h-4 mr-2" />
+                          {user.email}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {isAdmin && (
+                          <>
+                            <DropdownMenuItem onClick={() => navigate('/admin')}>
+                              <Settings className="w-4 h-4 mr-2" />
+                              Admin Dashboard
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
+                        <DropdownMenuItem onClick={signOut}>
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Sign Out
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ) : (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => navigate('/auth')}
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Sign In
+                  </Button>
+                )}
+              </>
+            )}
           </nav>
 
           {/* Mobile menu button */}
