@@ -263,7 +263,7 @@ const Home = () => {
                 <img 
                   src="/lovable-uploads/002c1556-cc44-4069-aae1-86335d66c709.png" 
                   alt="AASHVEE Publishers Logo" 
-                  className="h-8 w-auto"
+                  className="h-12 w-auto"
                 />
               </div>
               <p className="text-sm opacity-75">Your Voice, Their Ears</p>

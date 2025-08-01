@@ -33,7 +33,7 @@ const Header = () => {
             <img 
               src="/lovable-uploads/002c1556-cc44-4069-aae1-86335d66c709.png" 
               alt="AASHVEE Publishers Logo" 
-              className="h-10 w-auto"
+              className="h-16 w-auto"
             />
           </Link>
 
