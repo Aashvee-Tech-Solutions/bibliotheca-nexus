@@ -2,14 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* AASHVEE Publishers Design System - Professional Publishing Theme
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 213 27% 12%;
+
+    /* Publishing Brand Colors */
+    --brand-primary: 210 100% 48%;        /* AASHVEE Blue */
+    --brand-secondary: 195 100% 38%;      /* Deep Ocean Blue */
+    --brand-accent: 180 78% 48%;          /* Teal Accent */
+    --brand-gradient: linear-gradient(135deg, hsl(210 100% 48%), hsl(195 100% 38%));
+    --tech-gradient: linear-gradient(135deg, hsl(195 100% 38%), hsl(180 78% 48%));
+    
+    /* Semantic Colors */
+    --success: 158 64% 52%;
+    --warning: 43 96% 56%;
+    --info: 210 100% 48%;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
