@@ -22,7 +22,7 @@ import {
   Settings,
   Image
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -33,6 +33,8 @@ const Admin = () => {
   const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState("overview");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [manuscripts, setManuscripts] = useState([]);
+  const [checkingPlagiarism, setCheckingPlagiarism] = useState(false);
 
   // Show loading state
   if (loading) {
@@ -47,6 +49,20 @@ const Admin = () => {
   if (!user || !isAdmin) {
     return <Navigate to="/auth" replace />;
   }
+
+  // Fetch manuscripts on component mount
+  useEffect(() => {
+    fetchManuscripts();
+  }, []);
+
+  const fetchManuscripts = async () => {
+    try {
+      // For now using mock data since the Supabase client might not have proper types
+      setManuscripts([]);
+    } catch (error) {
+      console.error('Error fetching manuscripts:', error);
+    }
+  };
 
   // Sample data - in real app this would come from a backend
   const [books, setBooks] = useState([
@@ -87,6 +103,22 @@ const Admin = () => {
       email: "arun.beyyala@example.com",
       booksPublished: 3,
       totalSales: 890,
+      status: "Active"
+    },
+    {
+      id: 3,
+      name: "Dr. Sarah Johnson",
+      email: "sarah.johnson@example.com",
+      booksPublished: 2,
+      totalSales: 650,
+      status: "Active"
+    },
+    {
+      id: 4,
+      name: "Prof. Michael Chen",
+      email: "michael.chen@example.com",
+      booksPublished: 4,
+      totalSales: 980,
       status: "Active"
     }
   ]);
@@ -227,21 +259,65 @@ const Admin = () => {
     }
   };
 
+  const handlePlagiarismCheck = async (manuscriptId: string, content: string) => {
+    setCheckingPlagiarism(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('plagiarism-check', {
+        body: { manuscriptText: content, manuscriptId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Plagiarism Check Completed",
+        description: `Plagiarism score: ${data.plagiarismScore?.toFixed(1)}%`,
+      });
+
+      // Refresh manuscripts to show updated plagiarism score
+      fetchManuscripts();
+    } catch (error) {
+      toast({
+        title: "Plagiarism Check Failed",
+        description: "Failed to check plagiarism. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingPlagiarism(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       {/* Admin Header */}
-      <section className="py-8 bg-gradient-to-r from-brand-primary to-brand-secondary text-white">
-        <div className="container mx-auto px-4">
+      <section className="py-12 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+        </div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-              <p className="opacity-90">Manage books, authors, and publishing operations</p>
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl flex items-center justify-center">
+                  <Settings className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                    Admin Control Center
+                  </h1>
+                  <p className="text-lg opacity-90">Advanced publishing management & analytics</p>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Settings className="w-5 h-5" />
-              <span className="text-sm">Administrator</span>
+            <div className="text-right">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">System Online</span>
+              </div>
+              <div className="text-sm opacity-75">Welcome back, Administrator</div>
             </div>
           </div>
         </div>
@@ -249,58 +325,59 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="books">Books</TabsTrigger>
-            <TabsTrigger value="authors">Authors</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 bg-white/10 backdrop-blur-sm rounded-xl p-1">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Overview</TabsTrigger>
+            <TabsTrigger value="manuscripts" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Manuscripts</TabsTrigger>
+            <TabsTrigger value="books" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Books</TabsTrigger>
+            <TabsTrigger value="authors" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Authors</TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Analytics</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-8">
-            {/* Stats Cards */}
+            {/* Enhanced Stats Cards */}
             <div className="grid md:grid-cols-4 gap-6">
-              <Card>
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Books</CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-blue-800">Total Books</CardTitle>
+                  <BookOpen className="h-5 w-5 text-blue-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-brand-primary">{stats.totalBooks}</div>
-                  <p className="text-xs text-muted-foreground">Active publications</p>
+                  <div className="text-3xl font-bold text-blue-900">{stats.totalBooks}</div>
+                  <p className="text-xs text-blue-600 mt-1">+2 this month</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Authors</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-green-800">Authors</CardTitle>
+                  <Users className="h-5 w-5 text-green-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-brand-primary">{stats.totalAuthors}</div>
-                  <p className="text-xs text-muted-foreground">Published authors</p>
+                  <div className="text-3xl font-bold text-green-900">10+</div>
+                  <p className="text-xs text-green-600 mt-1">Active publishers</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-purple-800">Manuscripts</CardTitle>
+                  <Package className="h-5 w-5 text-purple-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-brand-primary">{stats.totalSales}</div>
-                  <p className="text-xs text-muted-foreground">Books sold</p>
+                  <div className="text-3xl font-bold text-purple-900">5</div>
+                  <p className="text-xs text-purple-600 mt-1">Under review</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-orange-800">Revenue</CardTitle>
+                  <TrendingUp className="h-5 w-5 text-orange-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-brand-primary">₹{stats.totalRevenue.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">Total earnings</p>
+                  <div className="text-3xl font-bold text-orange-900">₹{stats.totalRevenue.toLocaleString()}</div>
+                  <p className="text-xs text-orange-600 mt-1">Total earnings</p>
                 </CardContent>
               </Card>
             </div>
@@ -351,6 +428,155 @@ const Admin = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Manuscripts Tab with Plagiarism Checker */}
+          <TabsContent value="manuscripts" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Manuscripts Management</h2>
+              <Button className="bg-purple-600 hover:bg-purple-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Review Queue
+              </Button>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 mb-6">
+              <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-yellow-800">Pending Review</CardTitle>
+                  <Eye className="h-5 w-5 text-yellow-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-yellow-900">3</div>
+                  <p className="text-xs text-yellow-600 mt-1">Awaiting review</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-blue-800">In Review</CardTitle>
+                  <Settings className="h-5 w-5 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-900">2</div>
+                  <p className="text-xs text-blue-600 mt-1">Under review</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-green-800">Approved</CardTitle>
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-900">5</div>
+                  <p className="text-xs text-green-600 mt-1">Ready to publish</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Manuscript Queue</CardTitle>
+                <CardDescription>Review and manage submitted manuscripts with plagiarism detection</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-4 font-medium">Title</th>
+                        <th className="text-left p-4 font-medium">Author</th>
+                        <th className="text-left p-4 font-medium">Submitted</th>
+                        <th className="text-left p-4 font-medium">Status</th>
+                        <th className="text-left p-4 font-medium">Plagiarism</th>
+                        <th className="text-left p-4 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-t">
+                        <td className="p-4">
+                          <div className="font-medium">Advanced Machine Learning Techniques</div>
+                          <div className="text-sm text-muted-foreground">ID: MS001</div>
+                        </td>
+                        <td className="p-4 text-sm">Dr. Sarah Mitchell</td>
+                        <td className="p-4 text-sm">2024-01-15</td>
+                        <td className="p-4">
+                          <Badge variant="secondary">Pending Review</Badge>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="outline" className="bg-green-50 text-green-700">
+                              2.3%
+                            </Badge>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handlePlagiarismCheck('ms001', 'sample manuscript content for plagiarism check')}
+                              disabled={checkingPlagiarism}
+                            >
+                              {checkingPlagiarism ? "Checking..." : "Recheck"}
+                            </Button>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex space-x-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                              Approve
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr className="border-t">
+                        <td className="p-4">
+                          <div className="font-medium">Blockchain in Healthcare</div>
+                          <div className="text-sm text-muted-foreground">ID: MS002</div>
+                        </td>
+                        <td className="p-4 text-sm">Prof. John Davis</td>
+                        <td className="p-4 text-sm">2024-01-18</td>
+                        <td className="p-4">
+                          <Badge variant="default" className="bg-blue-600">In Review</Badge>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                              5.7%
+                            </Badge>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handlePlagiarismCheck('ms002', 'sample blockchain manuscript content')}
+                              disabled={checkingPlagiarism}
+                            >
+                              {checkingPlagiarism ? "Checking..." : "Recheck"}
+                            </Button>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex space-x-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                              Approve
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Books Tab */}
