@@ -31,14 +31,10 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
             <img 
-              src="/lovable-uploads/c5d60559-9d4f-48a1-a4a2-715ff0a79ce1.png" 
+              src="/lovable-uploads/002c1556-cc44-4069-aae1-86335d66c709.png" 
               alt="AASHVEE Publishers Logo" 
-              className="w-10 h-10"
+              className="h-10 w-auto"
             />
-            <div>
-              <h1 className="text-xl font-bold text-brand-primary">AASHVEE</h1>
-              <p className="text-xs text-muted-foreground -mt-1">Publishers</p>
-            </div>
           </Link>
 
           {/* Desktop Navigation */}

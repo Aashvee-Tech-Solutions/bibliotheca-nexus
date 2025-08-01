@@ -261,14 +261,10 @@ const Home = () => {
             <div>
               <div className="flex items-center space-x-3 mb-4">
                 <img 
-                  src="/lovable-uploads/c5d60559-9d4f-48a1-a4a2-715ff0a79ce1.png" 
+                  src="/lovable-uploads/002c1556-cc44-4069-aae1-86335d66c709.png" 
                   alt="AASHVEE Publishers Logo" 
-                  className="w-8 h-8"
+                  className="h-8 w-auto"
                 />
-                <div>
-                  <h3 className="text-lg font-bold">AASHVEE</h3>
-                  <p className="text-xs opacity-75">Publishers</p>
-                </div>
               </div>
               <p className="text-sm opacity-75">Your Voice, Their Ears</p>
             </div>
