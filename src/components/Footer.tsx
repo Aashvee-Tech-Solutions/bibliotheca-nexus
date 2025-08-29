@@ -97,7 +97,7 @@ const Footer = () => {
               <li>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Phone className="w-4 h-4" />
-                  <span>+91 9025033635</span>
+                  <span>+91 6281614117</span>
                 </div>
               </li>
             </ul>
@@ -112,7 +112,7 @@ const Footer = () => {
             </div>
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4" />
-              <span>Chennai, Tamil Nadu, India</span>
+              <span>Hyderabad, Telangana, India</span>
             </div>
           </div>
         </div>
