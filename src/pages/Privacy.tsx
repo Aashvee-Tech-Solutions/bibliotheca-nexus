@@ -140,9 +140,9 @@ const Privacy = () => {
                 If you have questions about this privacy policy or our data practices, please contact us:
               </p>
               <div className="mt-2">
-                <p><strong>Email:</strong> privacy@aashveetech.com</p>
-                <p><strong>Phone:</strong> +91 9025033635</p>
-                <p><strong>Address:</strong> Chennai, Tamil Nadu, India</p>
+                <p><strong>Email:</strong> info@aashveetech.com</p>
+                <p><strong>Phone:</strong> +91 6281614117</p>
+                <p><strong>Address:</strong> Hyderabad, Telangana, India</p>
               </div>
             </section>
 
