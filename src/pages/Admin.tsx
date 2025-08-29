@@ -35,6 +35,7 @@ const Admin = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [manuscripts, setManuscripts] = useState([]);
   const [checkingPlagiarism, setCheckingPlagiarism] = useState(false);
+  const [upcomingBooks, setUpcomingBooks] = useState<any[]>([]);
 
   // Show loading state
   if (loading) {
@@ -53,7 +54,22 @@ const Admin = () => {
   // Fetch manuscripts on component mount
   useEffect(() => {
     fetchManuscripts();
+    fetchUpcomingBooks();
   }, []);
+
+  const fetchUpcomingBooks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('upcoming_books')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setUpcomingBooks(data || []);
+    } catch (error) {
+      console.error('Error fetching upcoming books:', error);
+    }
+  };
 
   const fetchManuscripts = async () => {
     try {

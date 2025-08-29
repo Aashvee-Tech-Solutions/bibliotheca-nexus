@@ -13,6 +13,11 @@ import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import SubmitManuscript from "./pages/SubmitManuscript";
 import NotFound from "./pages/NotFound";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import UpcomingBooks from "./pages/UpcomingBooks";
+import Purchase from "./pages/Purchase";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +37,11 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/submit" element={<SubmitManuscript />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/upcoming-books" element={<UpcomingBooks />} />
+            <Route path="/purchase/:bookId" element={<Purchase />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

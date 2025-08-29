@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Book, Users, Package, Phone, Settings, User, LogOut, FileText } from "lucide-react";
+import { Menu, X, Book, Users, Package, Phone, Settings, User, LogOut, FileText, BookOpen } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ const Header = () => {
     { name: "Books", href: "/books", icon: Book },
     { name: "Authors", href: "/authors", icon: Users },
     { name: "Packages", href: "/packages", icon: Package },
+    { name: "Upcoming Books", href: "/upcoming-books", icon: BookOpen },
     { name: "Contact", href: "/contact", icon: Phone },
   ];
 
@@ -71,7 +72,11 @@ const Header = () => {
                           {user.email}
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                          <User className="w-4 h-4 mr-2" />
+                          Dashboard
+                        </DropdownMenuItem>
                         {isAdmin && (
                           <>
                             <DropdownMenuItem onClick={() => navigate('/admin')}>
