@@ -274,6 +274,8 @@ const Home = () => {
                 <li><Link to="/books" className="hover:opacity-100">Books</Link></li>
                 <li><Link to="/authors" className="hover:opacity-100">Authors</Link></li>
                 <li><Link to="/packages" className="hover:opacity-100">Packages</Link></li>
+                <li><Link to="/terms" className="hover:opacity-100">Terms & Conditions</Link></li>
+                <li><Link to="/privacy" className="hover:opacity-100">Privacy</Link></li>
               </ul>
             </div>
             <div>
