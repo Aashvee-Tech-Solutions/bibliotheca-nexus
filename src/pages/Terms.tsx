@@ -45,18 +45,20 @@ const Terms = () => {
               </ul>
             </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">4. Payment Terms</h2>
-              <p>
-                All payments for services and authorship positions are processed securely through our payment gateway. Payment terms include:
-              </p>
-              <ul className="list-disc ml-6 mt-2">
-                <li>Full payment required at time of booking</li>
-                <li>Refunds subject to our refund policy</li>
-                <li>All prices include applicable taxes</li>
-                <li>Currency conversions at current market rates</li>
-              </ul>
-            </section>
+          <section>
+  <h2 className="text-2xl font-semibold mb-4 text-foreground">4. Payment Terms</h2>
+  <p>
+    All payments for services and authorship positions are processed securely through our payment gateway. Payment terms include:
+  </p>
+  <ul className="list-disc ml-6 mt-2">
+    <li>Full payment required at time of booking</li>
+    <li>Refunds subject to our refund policy</li>
+    <li><strong className="text-red-600">No refunds are provided after the payment is completed.</strong></li>
+    <li>All prices include applicable taxes</li>
+    <li>Currency conversions at current market rates</li>
+  </ul>
+</section>
+
 
             <section>
               <h2 className="text-2xl font-semibold mb-4 text-foreground">5. Intellectual Property</h2>
