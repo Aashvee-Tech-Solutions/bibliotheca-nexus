@@ -269,7 +269,7 @@ const Home = () => {
         </div>
         <p className="text-sm opacity-75">Your Voice, Their Ears</p>
         <p className="text-xs mt-2 opacity-60">
-          AASHVEE Publishers is the imprint name of AASHVEE Tech Solutions Pvt. Ltd.
+          Aashvee Publishers is the imprint name of Aashvee Tech Solutions Pvt. Ltd.
         </p>
       </div>
       <div>
