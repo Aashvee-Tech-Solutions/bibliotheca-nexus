@@ -130,13 +130,25 @@ const Books = () => {
                       </div>
                     )}
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        Preview
-                      </Button>
+                      <Link to={`/book/${book.slug || book.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                          View Details
+                        </Button>
+                      </Link>
                       <Button 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => window.open('/payment-gateway', '_blank')}
+                        onClick={() => {
+                          // Create a direct purchase for regular books
+                          const purchaseData = {
+                            bookId: book.id,
+                            title: book.title,
+                            price: book.price,
+                            type: 'book_purchase'
+                          };
+                          const encodedData = encodeURIComponent(JSON.stringify(purchaseData));
+                          window.location.href = `/purchase-book?data=${encodedData}`;
+                        }}
                       >
                         Buy Now
                       </Button>

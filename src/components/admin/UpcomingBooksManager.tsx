@@ -198,34 +198,67 @@ export const UpcomingBooksManager = () => {
   const handleSaveBook = async () => {
     const bookData = editingBook || newBook;
     
-    if (!bookData.title || !bookData.genre) {
+    // Comprehensive validation
+    if (!bookData.title?.trim()) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Validation Error",
+        description: "Book title is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!bookData.genre?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Genre is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (bookData.total_author_positions < 1 || bookData.total_author_positions > 10) {
+      toast({
+        title: "Validation Error",
+        description: "Author positions must be between 1 and 10",
         variant: "destructive"
       });
       return;
     }
 
     try {
+      // Prepare data for save, ensuring proper format
       const saveData = {
-        ...bookData,
-        position_pricing: bookData.position_pricing || []
+        title: bookData.title.trim(),
+        genre: bookData.genre.trim(),
+        description: bookData.description?.trim() || '',
+        cover_image_url: bookData.cover_image_url || '',
+        total_author_positions: bookData.total_author_positions,
+        available_positions: bookData.available_positions,
+        price_per_position: bookData.price_per_position,
+        publication_date: bookData.publication_date || null,
+        status: bookData.status || 'active',
+        position_pricing: JSON.stringify(bookData.position_pricing || []),
+        copy_allocation: JSON.stringify(bookData.copy_allocation || defaultPricingStructure)
       };
 
-      if (editingBook) {
-        const { error } = await supabase
+      let result;
+      if (editingBook?.id) {
+        result = await supabase
           .from('upcoming_books')
           .update(saveData)
-          .eq('id', editingBook.id);
-
-        if (error) throw error;
+          .eq('id', editingBook.id)
+          .select();
       } else {
-        const { error } = await supabase
+        result = await supabase
           .from('upcoming_books')
-          .insert([saveData]);
+          .insert([saveData])
+          .select();
+      }
 
-        if (error) throw error;
+      if (result.error) {
+        console.error('Database error:', result.error);
+        throw new Error(result.error.message || 'Database operation failed');
       }
 
       toast({
@@ -248,37 +281,59 @@ export const UpcomingBooksManager = () => {
         copy_allocation: defaultPricingStructure,
         position_pricing: [{ position: 1, price: 5000 }]
       });
-      fetchBooks();
-    } catch (error) {
+      await fetchBooks();
+    } catch (error: any) {
       console.error('Error saving book:', error);
       toast({
-        title: "Error",
-        description: "Failed to save book",
+        title: "Save Error",
+        description: error.message || "Failed to save book. Please check your inputs and try again.",
         variant: "destructive"
       });
     }
   };
 
   const handleDeleteBook = async (bookId: string) => {
-    if (!confirm('Are you sure you want to delete this book?')) return;
+    const book = books.find(b => b.id === bookId);
+    if (!book) return;
+    
+    // Use window.confirm for better browser compatibility
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${book.title}"?\n\nThis action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
 
     try {
       // First check if there are any purchases for this book
       const { data: purchases, error: purchaseError } = await supabase
         .from('authorship_purchases')
-        .select('id')
-        .eq('upcoming_book_id', bookId)
-        .limit(1);
+        .select('id, payment_status')
+        .eq('upcoming_book_id', bookId);
 
-      if (purchaseError) throw purchaseError;
+      if (purchaseError) {
+        console.error('Error checking purchases:', purchaseError);
+        throw new Error('Failed to check existing purchases');
+      }
 
-      if (purchases && purchases.length > 0) {
+      // Check for completed purchases
+      const completedPurchases = purchases?.filter(p => p.payment_status === 'completed') || [];
+      
+      if (completedPurchases.length > 0) {
         toast({
           title: "Cannot Delete",
-          description: "This book has existing purchases and cannot be deleted.",
+          description: `This book has ${completedPurchases.length} completed purchase(s) and cannot be deleted.`,
           variant: "destructive"
         });
         return;
+      }
+
+      // If there are pending purchases, ask for confirmation
+      const pendingPurchases = purchases?.filter(p => p.payment_status === 'pending') || [];
+      if (pendingPurchases.length > 0) {
+        const confirmDelete = window.confirm(
+          `This book has ${pendingPurchases.length} pending purchase(s). Delete anyway?`
+        );
+        if (!confirmDelete) return;
       }
 
       const { error } = await supabase
@@ -286,18 +341,21 @@ export const UpcomingBooksManager = () => {
         .delete()
         .eq('id', bookId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error:', error);
+        throw new Error(error.message || 'Failed to delete book');
+      }
 
       toast({
         title: "Success",
         description: "Book deleted successfully"
       });
       fetchBooks();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting book:', error);
       toast({
         title: "Error",
-        description: "Failed to delete book",
+        description: error.message || "Failed to delete book. Please try again.",
         variant: "destructive"
       });
     }
