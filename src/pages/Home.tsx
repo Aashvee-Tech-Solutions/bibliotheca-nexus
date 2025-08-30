@@ -30,6 +30,25 @@ const Home = () => {
     }
   ];
 
+  const featuredBooks = [
+    {
+      id: 1,
+      title: "Quantum Computing and AI in Logistics",
+      authors: ["Dr. A. Sharma", "Prof. R. Gupta"],
+      category: "Technology",
+      rating: "4.8",
+      image: "/lovable-uploads/sample-book-1.jpg"
+    },
+    {
+      id: 2,
+      title: "Advances in Blockchain for Finance",
+      authors: ["Dr. K. Mehta"],
+      category: "Finance",
+      rating: "4.6",
+      image: "/lovable-uploads/sample-book-2.jpg"
+    }
+  ];
+
   const packages = [
     {
       name: "Essential",
@@ -74,12 +93,10 @@ const Home = () => {
     }
   ];
 
- 
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       {/* Hero Section */}
       <Hero />
 
@@ -121,7 +138,6 @@ const Home = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Featured Publications</h2>
               <p className="text-xl text-muted-foreground">Discover our latest academic and technical publications</p>
             </div>
-            </Link>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -233,54 +249,52 @@ const Home = () => {
       </section>
 
       {/* Footer */}
-      {/* Footer */}
-<footer className="bg-foreground text-background py-12">
-  <div className="container mx-auto px-4">
-    <div className="grid md:grid-cols-4 gap-8">
-      <div>
-        <div className="flex items-center space-x-3 mb-4">
-          <img 
-            src="/lovable-uploads/002c1556-cc44-4069-aae1-86335d66c709.png" 
-            alt="AASHVEE Publishers Logo" 
-            className="h-12 w-auto"
-          />
+      <footer className="bg-foreground text-background py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-3 mb-4">
+                <img 
+                  src="/lovable-uploads/002c1556-cc44-4069-aae1-86335d66c709.png" 
+                  alt="AASHVEE Publishers Logo" 
+                  className="h-12 w-auto"
+                />
+              </div>
+              <p className="text-sm opacity-75">Your Voice, Their Ears</p>
+              <p className="text-xs mt-2 opacity-60">
+                Aashvee Publishers is the imprint name of Aashvee Tech Solutions Pvt. Ltd.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Quick Links</h4>
+              <ul className="space-y-2 text-sm opacity-75">
+                <li><Link to="/authors" className="hover:opacity-100">Authors</Link></li>
+                <li><Link to="/packages" className="hover:opacity-100">Packages</Link></li>
+                <li><Link to="/terms" className="hover:opacity-100">Terms & Conditions</Link></li>
+                <li><Link to="/privacy" className="hover:opacity-100">Privacy</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Services</h4>
+              <ul className="space-y-2 text-sm opacity-75">
+                <li>Academic Publishing</li>
+                <li>Technical Publications</li>
+                <li>Editorial Services</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Contact</h4>
+              <ul className="space-y-2 text-sm opacity-75">
+                <li>info@aashveepublisher.com</li>
+                <li>www.aashveepublisher.com</li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm opacity-75">
+            <p>&copy; 2024 AASHVEE Publishers. All rights reserved.</p>
+          </div>
         </div>
-        <p className="text-sm opacity-75">Your Voice, Their Ears</p>
-        <p className="text-xs mt-2 opacity-60">
-          Aashvee Publishers is the imprint name of Aashvee Tech Solutions Pvt. Ltd.
-        </p>
-      </div>
-      <div>
-        <h4 className="font-semibold mb-3">Quick Links</h4>
-        <ul className="space-y-2 text-sm opacity-75">
-          <li><Link to="/authors" className="hover:opacity-100">Authors</Link></li>
-          <li><Link to="/packages" className="hover:opacity-100">Packages</Link></li>
-          <li><Link to="/terms" className="hover:opacity-100">Terms & Conditions</Link></li>
-          <li><Link to="/privacy" className="hover:opacity-100">Privacy</Link></li>
-        </ul>
-      </div>
-      <div>
-        <h4 className="font-semibold mb-3">Services</h4>
-        <ul className="space-y-2 text-sm opacity-75">
-          <li>Academic Publishing</li>
-          <li>Technical Publications</li>
-          <li>Editorial Services</li>
-        </ul>
-      </div>
-      <div>
-        <h4 className="font-semibold mb-3">Contact</h4>
-        <ul className="space-y-2 text-sm opacity-75">
-          <li>info@aashveepublisher.com</li>
-          <li>www.aashveepublisher.com</li>
-        </ul>
-      </div>
-    </div>
-    <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm opacity-75">
-      <p>&copy; 2024 AASHVEE Publishers. All rights reserved.</p>
-    </div>
-  </div>
-</footer>
-
+      </footer>
     </div>
   );
 };
