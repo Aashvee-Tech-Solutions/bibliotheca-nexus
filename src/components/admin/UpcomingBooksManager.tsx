@@ -76,11 +76,11 @@ export const UpcomingBooksManager = () => {
     cover_image_url: "",
     total_author_positions: 1,
     available_positions: 1,
-    price_per_position: 16000,
+    price_per_position: 5000,
     publication_date: "",
     status: "active",
     copy_allocation: defaultPricingStructure,
-    position_pricing: defaultPricingStructure["1"].positions
+    position_pricing: [{ position: 1, price: 5000 }]
   });
 
   useEffect(() => {
@@ -237,11 +237,11 @@ export const UpcomingBooksManager = () => {
         cover_image_url: "",
         total_author_positions: 1,
         available_positions: 1,
-        price_per_position: 16000,
+        price_per_position: 5000,
         publication_date: "",
         status: "active",
         copy_allocation: defaultPricingStructure,
-        position_pricing: defaultPricingStructure["1"].positions
+        position_pricing: [{ position: 1, price: 5000 }]
       });
       fetchBooks();
     } catch (error) {
@@ -349,33 +349,57 @@ export const UpcomingBooksManager = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="positions">Author Positions</Label>
-                <Select
-                  value={currentBook.total_author_positions.toString()}
-                  onValueChange={(value) => handlePositionChange(parseInt(value), currentBook)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 Author (₹16,000 - 2 copies)</SelectItem>
-                    <SelectItem value="2">2 Authors (₹10,000+₹9,000 - 4 copies)</SelectItem>
-                    <SelectItem value="3">3 Authors (₹8,000+₹7,000+₹6,000 - 6 copies)</SelectItem>
-                    <SelectItem value="4">4 Authors (₹7,000+₹6,000+₹5,000+₹4,000 - 8 copies)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="positions">Number of Author Positions</Label>
+                <Input
+                  id="positions"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={currentBook.total_author_positions}
+                  onChange={(e) => {
+                    const positions = parseInt(e.target.value) || 1;
+                    const newPositions = Array.from({ length: positions }, (_, i) => ({
+                      position: i + 1,
+                      price: 5000 // Default price
+                    }));
+                    
+                    if (editingBook) {
+                      setEditingBook({
+                        ...editingBook,
+                        total_author_positions: positions,
+                        available_positions: positions,
+                        position_pricing: newPositions,
+                        price_per_position: newPositions[0]?.price || 5000
+                      });
+                    } else {
+                      setNewBook({
+                        ...newBook,
+                        total_author_positions: positions,
+                        available_positions: positions,
+                        position_pricing: newPositions,
+                        price_per_position: newPositions[0]?.price || 5000
+                      });
+                    }
+                  }}
+                  placeholder="Enter number of positions"
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">Price per Position</Label>
+                <Label htmlFor="copies">Total Book Copies</Label>
                 <Input
-                  id="price"
+                  id="copies"
                   type="number"
-                  value={currentBook.price_per_position}
-                  onChange={(e) => editingBook
-                    ? setEditingBook({...editingBook, price_per_position: parseFloat(e.target.value)})
-                    : setNewBook({...newBook, price_per_position: parseFloat(e.target.value)})
-                  }
+                  min="1"
+                  value={currentBook.total_author_positions * 2}
+                  onChange={(e) => {
+                    // Read-only calculated field based on positions
+                  }}
+                  placeholder="Auto-calculated (2 copies per position)"
+                  disabled
                 />
+                <p className="text-xs text-muted-foreground">
+                  Automatically calculated: {currentBook.total_author_positions} positions × 2 copies = {currentBook.total_author_positions * 2} total copies
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="publication_date">Publication Date</Label>
@@ -408,66 +432,89 @@ export const UpcomingBooksManager = () => {
                   </SelectContent>
                 </Select>
               </div>
-                  {/* Position-wise custom pricing */}
-                  <div className="col-span-2 space-y-2">
-                    <Label>Position-Specific Pricing</Label>
-                    <div className="space-y-2">
-                      {currentBook.position_pricing?.map((pos: any, idx: number) => (
-                        <div key={idx} className="flex items-center space-x-2 p-2 border rounded">
-                          <Label className="min-w-[80px]">Position {pos.position}:</Label>
+              {/* Position-wise custom pricing */}
+              <div className="col-span-2 space-y-4">
+                <Label className="text-base font-semibold">Position-Specific Pricing</Label>
+                <div className="space-y-3 max-h-48 overflow-y-auto">
+                  {currentBook.position_pricing?.map((pos: any, idx: number) => (
+                    <div key={idx} className="flex items-center space-x-3 p-3 border rounded-lg bg-muted/30">
+                      <div className="flex items-center space-x-2">
+                        <Label className="min-w-[70px] font-medium">Position {pos.position}:</Label>
+                        <div className="flex items-center space-x-1">
+                          <span className="text-sm">₹</span>
                           <Input
                             type="number"
                             value={pos.price}
                             onChange={(e) => {
                               const newPricing = [...(currentBook.position_pricing || [])];
                               newPricing[idx].price = parseFloat(e.target.value) || 0;
+                              
+                              // Update the base price_per_position to the first position's price
+                              const basePrice = newPricing[0]?.price || 0;
+                              
                               if (editingBook) {
-                                setEditingBook({...editingBook, position_pricing: newPricing});
+                                setEditingBook({
+                                  ...editingBook, 
+                                  position_pricing: newPricing,
+                                  price_per_position: basePrice
+                                });
                               } else {
-                                setNewBook({...newBook, position_pricing: newPricing});
+                                setNewBook({
+                                  ...newBook, 
+                                  position_pricing: newPricing,
+                                  price_per_position: basePrice
+                                });
                               }
                             }}
-                            placeholder="Price"
-                            className="flex-1"
+                            placeholder="Enter price"
+                            className="w-24"
+                            min="0"
                           />
-                          <span className="text-sm text-muted-foreground">₹</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="cover">Cover Image</Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        id="cover"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        disabled={uploading}
-                      />
-                      {uploading && <span className="text-sm text-muted-foreground">Uploading...</span>}
-                    </div>
-                    {currentBook.cover_image_url && (
-                      <div className="mt-2">
-                        <img 
-                          src={currentBook.cover_image_url} 
-                          alt="Cover preview" 
-                          className="w-32 h-40 object-cover rounded border"
-                        />
                       </div>
-                    )}
+                      <div className="flex-1 text-xs text-muted-foreground">
+                        2 copies included
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-xs text-muted-foreground p-2 bg-blue-50 rounded border-l-4 border-blue-400">
+                  💡 Tip: Set different prices for each position. Position 1 is typically the highest priced.
+                </div>
+              </div>
+              
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="cover">Cover Image</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id="cover"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                  />
+                  {uploading && <span className="text-sm text-muted-foreground">Uploading...</span>}
+                </div>
+                {currentBook.cover_image_url && (
+                  <div className="mt-2">
+                    <img 
+                      src={currentBook.cover_image_url} 
+                      alt="Cover preview" 
+                      className="w-32 h-40 object-cover rounded border"
+                    />
                   </div>
-                </div>
-                <div className="flex justify-end space-x-2 mt-4">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSaveBook}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {editingBook ? 'Update' : 'Create'} Book
-                  </Button>
-                </div>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveBook}>
+                <Save className="w-4 h-4 mr-2" />
+                {editingBook ? 'Update' : 'Create'} Book
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
