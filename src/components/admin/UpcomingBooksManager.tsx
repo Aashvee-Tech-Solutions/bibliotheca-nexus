@@ -23,13 +23,14 @@ interface UpcomingBook {
   publication_date: string;
   status: string;
   copy_allocation: any;
+  purchased_positions?: any[];
 }
 
 const defaultPricingStructure = {
-  "1": { price: 16000, copies: 2 },
-  "2": { price_structure: [10000, 9000], copies: 4 },
-  "3": { price_structure: [8000, 7000, 6000], copies: 6 },
-  "4": { price_structure: [7000, 6000, 5000, 4000], copies: 8 }
+  "1": { price: 16000, copies: 2, positions: [{ position: 1, price: 16000 }] },
+  "2": { price_structure: [10000, 9000], copies: 4, positions: [{ position: 1, price: 10000 }, { position: 2, price: 9000 }] },
+  "3": { price_structure: [8000, 7000, 6000], copies: 6, positions: [{ position: 1, price: 8000 }, { position: 2, price: 7000 }, { position: 3, price: 6000 }] },
+  "4": { price_structure: [7000, 6000, 5000, 4000], copies: 8, positions: [{ position: 1, price: 7000 }, { position: 2, price: 6000 }, { position: 3, price: 5000 }, { position: 4, price: 4000 }] }
 };
 
 export const UpcomingBooksManager = () => {
@@ -60,11 +61,28 @@ export const UpcomingBooksManager = () => {
     try {
       const { data, error } = await supabase
         .from('upcoming_books')
-        .select('*')
+        .select(`
+          *,
+          authorship_purchases (
+            id,
+            user_id,
+            positions_purchased,
+            payment_status,
+            total_amount,
+            created_at
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setBooks(data || []);
+      
+      // Process the data to include purchased positions
+      const booksWithPurchases = (data || []).map(book => ({
+        ...book,
+        purchased_positions: book.authorship_purchases || []
+      }));
+      
+      setBooks(booksWithPurchases);
     } catch (error) {
       console.error('Error fetching books:', error);
       toast({
@@ -420,15 +438,43 @@ export const UpcomingBooksManager = () => {
                 <CardDescription>{book.genre}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center">
-                    <Users className="w-4 h-4 mr-1" />
-                    {book.available_positions}/{book.total_author_positions}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center">
+                      <Users className="w-4 h-4 mr-1" />
+                      {book.available_positions}/{book.total_author_positions}
+                    </div>
+                    <div className="flex items-center font-semibold">
+                      <IndianRupee className="w-4 h-4" />
+                      {book.price_per_position.toLocaleString()}
+                    </div>
                   </div>
-                  <div className="flex items-center font-semibold">
-                    <IndianRupee className="w-4 h-4" />
-                    {book.price_per_position.toLocaleString()}
-                  </div>
+                  
+                  {/* Show position-wise pricing */}
+                  {book.copy_allocation && book.copy_allocation[book.total_author_positions.toString()]?.positions && (
+                    <div className="text-xs space-y-1">
+                      <div className="font-medium text-muted-foreground">Position Pricing:</div>
+                      {book.copy_allocation[book.total_author_positions.toString()].positions.map((pos: any, idx: number) => {
+                        const isPurchased = book.purchased_positions?.some((purchase: any) => 
+                          purchase.payment_status === 'completed' && 
+                          purchase.positions_purchased === pos.position
+                        );
+                        return (
+                          <div key={idx} className="flex justify-between items-center">
+                            <span className={isPurchased ? "line-through text-muted-foreground" : ""}>
+                              Position {pos.position}:
+                            </span>
+                            <span className={`font-semibold ${isPurchased ? "line-through text-muted-foreground" : "text-primary"}`}>
+                              ₹{pos.price.toLocaleString()}
+                            </span>
+                            {isPurchased && (
+                              <Badge variant="secondary" className="text-xs ml-2">Sold</Badge>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="flex space-x-2">
                   <Button size="sm" variant="outline" onClick={() => openEditDialog(book)}>

@@ -1,12 +1,51 @@
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Users, Award, Zap, Globe, CheckCircle, Star, ArrowRight } from "lucide-react";
+import { BookOpen, Users, Award, Zap, Globe, CheckCircle, Star, ArrowRight, IndianRupee, CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Home = () => {
+  const [featuredBooks, setFeaturedBooks] = useState([]);
+  const [upcomingBooks, setUpcomingBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  const fetchBooks = async () => {
+    try {
+      // Fetch published books
+      const { data: published, error: publishedError } = await supabase
+        .from('books')
+        .select('*')
+        .eq('status', 'active')
+        .limit(4);
+
+      if (publishedError) throw publishedError;
+
+      // Fetch upcoming books
+      const { data: upcoming, error: upcomingError } = await supabase
+        .from('upcoming_books')
+        .select('*')
+        .eq('status', 'active')
+        .limit(3);
+
+      if (upcomingError) throw upcomingError;
+
+      setFeaturedBooks(published || []);
+      setUpcomingBooks(upcoming || []);
+    } catch (error) {
+      console.error('Error fetching books:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const features = [
     {
       icon: BookOpen,
@@ -30,24 +69,6 @@ const Home = () => {
     }
   ];
 
-  const featuredBooks = [
-    {
-      id: 1,
-      title: "Quantum Computing and AI in Logistics",
-      authors: ["Dr. A. Sharma", "Prof. R. Gupta"],
-      category: "Technology",
-      rating: "4.8",
-      image: "/lovable-uploads/sample-book-1.jpg"
-    },
-    {
-      id: 2,
-      title: "Advances in Blockchain for Finance",
-      authors: ["Dr. K. Mehta"],
-      category: "Finance",
-      rating: "4.6",
-      image: "/lovable-uploads/sample-book-2.jpg"
-    }
-  ];
 
   const packages = [
     {
@@ -138,39 +159,136 @@ const Home = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Featured Publications</h2>
               <p className="text-xl text-muted-foreground">Discover our latest academic and technical publications</p>
             </div>
+            <Link to="/books">
+              <Button variant="outline">
+                View All Books
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </Link>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {featuredBooks.map((book) => (
-              <Card key={book.id} className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                <div className="flex">
-                  <div className="w-1/3">
-                    <img 
-                      src={book.image} 
-                      alt={book.title}
-                      className="w-full h-full object-cover"
-                    />
+          {loading ? (
+            <div className="text-center py-8">Loading books...</div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredBooks.map((book) => (
+                <Card key={book.id} className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                  <div className="aspect-[3/4] overflow-hidden">
+                    {book.cover_image_url ? (
+                      <img 
+                        src={book.cover_image_url} 
+                        alt={book.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-muted-foreground" />
+                      </div>
+                    )}
                   </div>
-                  <div className="w-2/3 p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Badge variant="secondary">{book.category}</Badge>
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-medium ml-1">{book.rating}</span>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="secondary">{book.genre}</Badge>
+                    </div>
+                    <CardTitle className="text-lg mb-2 leading-tight line-clamp-2">{book.title}</CardTitle>
+                    <div className="text-sm text-muted-foreground mb-3">
+                      By {book.author_name}
+                    </div>
+                    {book.price && (
+                      <div className="flex items-center text-lg font-bold text-brand-primary mb-3">
+                        <IndianRupee className="w-4 h-4" />
+                        {book.price}
+                      </div>
+                    )}
+                    <Button size="sm" className="w-full">
+                      View Details
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Upcoming Books Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Upcoming Publications</h2>
+              <p className="text-xl text-muted-foreground">Join as a co-author in these exciting upcoming books</p>
+            </div>
+            <Link to="/upcoming-books">
+              <Button variant="outline">
+                View All Upcoming
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-8">Loading upcoming books...</div>
+          ) : upcomingBooks.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {upcomingBooks.map((book) => (
+                <Card key={book.id} className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                  <div className="aspect-[3/4] relative overflow-hidden">
+                    {book.cover_image_url ? (
+                      <img
+                        src={book.cover_image_url}
+                        alt={book.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-brand-primary/20 to-brand-accent/20 flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="absolute top-4 right-4">
+                      <Badge variant={book.available_positions > 0 ? "default" : "secondary"}>
+                        {book.available_positions > 0 ? "Available" : "Sold Out"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline">{book.genre}</Badge>
+                    </div>
+                    <CardTitle className="text-lg mb-2 leading-tight line-clamp-2">{book.title}</CardTitle>
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{book.description}</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Users className="w-4 h-4 mr-1" />
+                        {book.available_positions}/{book.total_author_positions}
+                      </div>
+                      <div className="flex items-center text-lg font-semibold text-brand-primary">
+                        <IndianRupee className="w-4 h-4" />
+                        {book.price_per_position?.toLocaleString()}
                       </div>
                     </div>
-                    <CardTitle className="text-lg mb-3 leading-tight">{book.title}</CardTitle>
-                    <div className="text-sm text-muted-foreground mb-4">
-                      By {book.authors.join(", ")}
-                    </div>
-                    <Button size="sm" className="w-full">
-                      Learn More
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                    {book.publication_date && (
+                      <div className="flex items-center text-xs text-muted-foreground mb-3">
+                        <CalendarDays className="w-3 h-3 mr-1" />
+                        {new Date(book.publication_date).toLocaleDateString()}
+                      </div>
+                    )}
+                    <Link to={`/purchase/${book.id}`}>
+                      <Button size="sm" className="w-full" disabled={book.available_positions === 0}>
+                        {book.available_positions > 0 ? "Join as Co-Author" : "Sold Out"}
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-xl font-semibold mb-2">No Upcoming Books</h3>
+              <p className="text-muted-foreground">Check back soon for new publishing opportunities!</p>
+            </div>
+          )}
         </div>
       </section>
 
