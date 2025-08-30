@@ -29,6 +29,9 @@ interface PurchaseData {
   phoneNumber: string;
   bio: string;
   profileImage: File | null;
+  bankAccount: string;
+  ifsc: string;
+  accountHolderName: string;
 }
 
 const Purchase = () => {
@@ -44,7 +47,10 @@ const Purchase = () => {
     positions: 1,
     phoneNumber: '',
     bio: '',
-    profileImage: null
+    profileImage: null,
+    bankAccount: '',
+    ifsc: '',
+    accountHolderName: ''
   });
 
   useEffect(() => {
@@ -143,23 +149,28 @@ const Purchase = () => {
 
       if (purchaseError) throw purchaseError;
 
-      // Simulate payment processing (replace with actual PhonePe integration)
-      const paymentId = `PAY_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Update purchase with payment ID and mark as completed
-      const { error: updateError } = await supabase
-        .from('authorship_purchases')
-        .update({
-          payment_id: paymentId,
-          payment_status: 'completed'
-        })
-        .eq('id', purchase.id);
+      // Process payment through Cashfree
+      const { data: paymentResult, error: paymentError } = await supabase.functions
+        .invoke('payment-processor', {
+          body: {
+            purchaseId: purchase.id,
+            amount: totalAmount,
+            phoneNumber: purchaseData.phoneNumber,
+            bankAccount: purchaseData.bankAccount,
+            ifsc: purchaseData.ifsc,
+            name: purchaseData.accountHolderName
+          }
+        });
 
-      if (updateError) throw updateError;
+      if (paymentError) throw paymentError;
+
+      if (!paymentResult.success) {
+        throw new Error(paymentResult.error || 'Payment processing failed');
+      }
 
       toast({
         title: "Purchase Successful!",
-        description: `You have successfully purchased ${purchaseData.positions} authorship position(s).`
+        description: `Payment processed successfully. Bank verification score: ${paymentResult.bankVerification?.nameMatchScore || 'N/A'}`
       });
 
       navigate('/dashboard');
@@ -167,7 +178,7 @@ const Purchase = () => {
       console.error('Error processing purchase:', error);
       toast({
         title: "Purchase Failed",
-        description: "There was an error processing your purchase. Please try again.",
+        description: error.message || "There was an error processing your purchase. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -344,6 +355,54 @@ const Purchase = () => {
                 </div>
 
                 <div className="border-t pt-4">
+                  <h3 className="text-lg font-semibold mb-4">Payment Details</h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="accountHolderName">Account Holder Name *</Label>
+                      <Input
+                        id="accountHolderName"
+                        placeholder="John Doe"
+                        value={purchaseData.accountHolderName}
+                        onChange={(e) => setPurchaseData(prev => ({
+                          ...prev,
+                          accountHolderName: e.target.value
+                        }))}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="bankAccount">Bank Account Number *</Label>
+                      <Input
+                        id="bankAccount"
+                        placeholder="26291800001191"
+                        value={purchaseData.bankAccount}
+                        onChange={(e) => setPurchaseData(prev => ({
+                          ...prev,
+                          bankAccount: e.target.value
+                        }))}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="ifsc">IFSC Code *</Label>
+                      <Input
+                        id="ifsc"
+                        placeholder="YESB0000001"
+                        value={purchaseData.ifsc}
+                        onChange={(e) => setPurchaseData(prev => ({
+                          ...prev,
+                          ifsc: e.target.value.toUpperCase()
+                        }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
                   <div className="flex items-center justify-between text-lg font-semibold">
                     <span>Total Amount:</span>
                     <span className="flex items-center">
@@ -356,7 +415,7 @@ const Purchase = () => {
                 <Button
                   className="w-full"
                   size="lg"
-                  disabled={!purchaseData.phoneNumber || purchasing || book.available_positions < purchaseData.positions}
+                  disabled={!purchaseData.phoneNumber || !purchaseData.bankAccount || !purchaseData.ifsc || !purchaseData.accountHolderName || purchasing || book.available_positions < purchaseData.positions}
                   onClick={handlePurchase}
                 >
                   {purchasing ? "Processing..." : `Pay ₹${totalAmount.toLocaleString()}`}

@@ -18,28 +18,63 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { purchaseId, amount, phoneNumber } = await req.json();
+    const { purchaseId, amount, phoneNumber, bankAccount, ifsc, name } = await req.json();
 
-    console.log('Processing payment for purchase:', purchaseId, 'Amount:', amount);
+    console.log('Processing Cashfree payment for purchase:', purchaseId, 'Amount:', amount);
 
-    // In a real implementation, you would integrate with PhonePe API here
-    // For now, we'll simulate the payment process
+    // Cashfree Payment Integration
+    const cashfreeUrl = 'https://sandbox.cashfree.com/verification/bank-account/sync';
     
-    // Simulate payment processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const cashfreePayload = {
+      bank_account: bankAccount,
+      ifsc: ifsc,
+      name: name,
+      phone: phoneNumber
+    };
 
-    // Generate a mock payment ID
-    const paymentId = `PAY_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const cashfreeHeaders = {
+      'Content-Type': 'application/json',
+      'x-client-id': Deno.env.get('CASHFREE_CLIENT_ID') ?? '',
+      'x-client-secret': Deno.env.get('CASHFREE_CLIENT_SECRET') ?? ''
+    };
+
+    console.log('Making Cashfree bank verification request...');
     
-    // For demo purposes, we'll assume payment is successful
-    const paymentStatus = 'completed';
+    const cashfreeResponse = await fetch(cashfreeUrl, {
+      method: 'POST',
+      headers: cashfreeHeaders,
+      body: JSON.stringify(cashfreePayload)
+    });
+
+    const cashfreeResult = await cashfreeResponse.json();
+    
+    console.log('Cashfree verification response:', cashfreeResult);
+
+    let paymentStatus = 'failed';
+    let paymentId = `CF_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Check if bank verification was successful
+    if (cashfreeResult.account_status === 'VALID') {
+      paymentStatus = 'completed';
+      paymentId = cashfreeResult.utr || paymentId;
+      
+      console.log('Bank verification successful, processing payment...');
+    } else {
+      console.log('Bank verification failed:', cashfreeResult.account_status_code);
+      throw new Error(`Bank verification failed: ${cashfreeResult.account_status_code || 'Invalid bank details'}`);
+    }
 
     // Update the purchase record with payment details
     const { error: updateError } = await supabase
       .from('authorship_purchases')
       .update({
         payment_id: paymentId,
-        payment_status: paymentStatus
+        payment_status: paymentStatus,
+        payment_details: JSON.stringify({
+          cashfree_response: cashfreeResult,
+          verification_score: cashfreeResult.name_match_score,
+          bank_name: cashfreeResult.bank_name
+        })
       })
       .eq('id', purchaseId);
 
@@ -54,7 +89,12 @@ serve(async (req) => {
         success: true,
         paymentId,
         status: paymentStatus,
-        message: 'Payment processed successfully'
+        message: 'Payment processed successfully',
+        bankVerification: {
+          nameMatchScore: cashfreeResult.name_match_score,
+          bankName: cashfreeResult.bank_name,
+          accountStatus: cashfreeResult.account_status
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
