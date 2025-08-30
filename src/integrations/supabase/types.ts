@@ -64,6 +64,7 @@ export type Database = {
           payment_id: string | null
           payment_status: string
           phone_number: string | null
+          position_purchased: number | null
           positions_purchased: number
           profile_image_url: string | null
           total_amount: number
@@ -81,6 +82,7 @@ export type Database = {
           payment_id?: string | null
           payment_status?: string
           phone_number?: string | null
+          position_purchased?: number | null
           positions_purchased?: number
           profile_image_url?: string | null
           total_amount: number
@@ -98,6 +100,7 @@ export type Database = {
           payment_id?: string | null
           payment_status?: string
           phone_number?: string | null
+          position_purchased?: number | null
           positions_purchased?: number
           profile_image_url?: string | null
           total_amount?: number
@@ -321,6 +324,7 @@ export type Database = {
           description: string | null
           genre: string | null
           id: string
+          position_pricing: Json | null
           price_per_position: number
           publication_date: string | null
           status: string
@@ -336,6 +340,7 @@ export type Database = {
           description?: string | null
           genre?: string | null
           id?: string
+          position_pricing?: Json | null
           price_per_position: number
           publication_date?: string | null
           status?: string
@@ -351,6 +356,7 @@ export type Database = {
           description?: string | null
           genre?: string | null
           id?: string
+          position_pricing?: Json | null
           price_per_position?: number
           publication_date?: string | null
           status?: string

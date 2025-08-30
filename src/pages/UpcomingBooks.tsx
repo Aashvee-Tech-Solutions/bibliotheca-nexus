@@ -20,6 +20,8 @@ interface UpcomingBook {
   price_per_position: number;
   publication_date: string;
   status: string;
+  copy_allocation?: any;
+  authorship_purchases?: any[];
 }
 
 const UpcomingBooks = () => {
@@ -36,7 +38,17 @@ const UpcomingBooks = () => {
     try {
       const { data, error } = await supabase
         .from('upcoming_books')
-        .select('*')
+        .select(`
+          *,
+          authorship_purchases (
+            id,
+            user_id,
+            position_purchased,
+            payment_status,
+            total_amount,
+            created_at
+          )
+        `)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
@@ -144,11 +156,34 @@ const UpcomingBooks = () => {
                         <Users className="w-4 h-4 mr-1" />
                         {book.available_positions}/{book.total_author_positions} positions
                       </div>
-                      <div className="flex items-center text-lg font-semibold">
-                        <IndianRupee className="w-4 h-4" />
-                        {book.price_per_position.toLocaleString()}
-                      </div>
                     </div>
+                    
+                    {/* Show position-wise pricing */}
+                    {book.copy_allocation && book.copy_allocation[book.total_author_positions.toString()]?.positions && (
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">Position Pricing:</div>
+                        {book.copy_allocation[book.total_author_positions.toString()].positions.map((pos: any, idx: number) => {
+                          const isPurchased = book.authorship_purchases?.some((purchase: any) => 
+                            purchase.payment_status === 'completed' && purchase.position_purchased === pos.position
+                          );
+                          return (
+                            <div key={idx} className="flex justify-between items-center text-sm">
+                              <span className={isPurchased ? "line-through text-muted-foreground" : ""}>
+                                Position {pos.position}:
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`font-semibold ${isPurchased ? "line-through text-muted-foreground" : "text-primary"}`}>
+                                  ₹{pos.price.toLocaleString()}
+                                </span>
+                                {isPurchased && (
+                                  <Badge variant="secondary" className="text-xs">Sold</Badge>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     
                     {book.publication_date && (
                       <div className="flex items-center text-sm text-muted-foreground">
