@@ -13,14 +13,17 @@ const Terms = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Acceptance of Terms</h2>
               <p>
-                By accessing and using AASHVEE Publishers' services, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+                By accessing and using Aashvee Publishers' services, you accept and agree to be bound by the terms and provisions of this agreement. 
+                <strong className="text-foreground"> AASHVEE Publishers is the publishing imprint of AASHVEE Tech Solutions Pvt. Ltd.</strong> 
+                If you do not agree to abide by the above, please do not use this service.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold mb-4 text-foreground">2. Publishing Services</h2>
               <p>
-                AASHVEE Publishers provides comprehensive publishing services including manuscript evaluation, editing, design, printing, and distribution. All services are subject to our professional standards and quality requirements.
+                AASHVEE Publishers (an imprint of AASHVEE Tech Solutions Pvt. Ltd.) provides comprehensive publishing services including manuscript evaluation, editing, design, printing, and distribution. 
+                All services are subject to our professional standards and quality requirements.
               </p>
               <ul className="list-disc ml-6 mt-2">
                 <li>Manuscript submission and review process</li>
@@ -43,25 +46,24 @@ const Terms = () => {
               </ul>
             </section>
 
-          <section>
-  <h2 className="text-2xl font-semibold mb-4 text-foreground">4. Payment Terms</h2>
-  <p>
-    All payments for services and authorship positions are processed securely through our payment gateway. Payment terms include:
-  </p>
-  <ul className="list-disc ml-6 mt-2">
-    <li>Full payment required at time of booking</li>
-    <li>Refunds subject to our refund policy</li>
-    <li><strong className="text-red-600">No refunds are provided after the payment is completed.</strong></li>
-    <li>All prices include applicable taxes</li>
-    <li>Currency conversions at current market rates</li>
-  </ul>
-</section>
-
+            <section>
+              <h2 className="text-2xl font-semibold mb-4 text-foreground">4. Payment Terms</h2>
+              <p>
+                All payments for services and authorship positions are processed securely through our payment gateway. Payment terms include:
+              </p>
+              <ul className="list-disc ml-6 mt-2">
+                <li>Full payment required at time of booking</li>
+                <li>Refunds subject to our refund policy</li>
+                <li><strong className="text-red-600">No refunds are provided after the payment is completed.</strong></li>
+                <li>All prices include applicable taxes</li>
+                <li>Currency conversions at current market rates</li>
+              </ul>
+            </section>
 
             <section>
               <h2 className="text-2xl font-semibold mb-4 text-foreground">5. Intellectual Property</h2>
               <p>
-                Authors retain ownership of their original work. AASHVEE Publishers obtains necessary rights for publication, distribution, and marketing as outlined in individual agreements.
+                Authors retain ownership of their original work. AASHVEE Publishers (imprint of AASHVEE Tech Solutions Pvt. Ltd.) obtains necessary rights for publication, distribution, and marketing as outlined in individual agreements.
               </p>
             </section>
 
@@ -113,7 +115,7 @@ const Terms = () => {
 
             <footer className="mt-12 pt-6 border-t text-sm text-muted-foreground">
               <p>Last updated: {new Date().toLocaleDateString()}</p>
-              <p>© 2025 AASHVEE Publishers. All rights reserved.</p>
+              <p>© 2025 AASHVEE Tech Solutions Pvt. Ltd. | AASHVEE Publishers (Imprint).</p>
             </footer>
           </div>
         </div>
