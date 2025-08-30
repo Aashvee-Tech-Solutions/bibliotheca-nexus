@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Phone, MapPin, Clock, Send, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const { toast } = useToast();
@@ -28,23 +29,56 @@ const Contact = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message Sent Successfully!",
-      description: "Thank you for contacting us. We'll get back to you within 24 hours.",
-    });
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      subject: "",
-      package: "",
-      manuscript: "",
-      message: "",
-      newsletter: false
-    });
+    
+    try {
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject || 'Contact Form Submission',
+          message: `
+            Subject: ${formData.subject}
+            Package Interest: ${formData.package || 'Not specified'}
+            Manuscript Status: ${formData.manuscript || 'Not specified'}
+            Phone: ${formData.phone || 'Not provided'}
+            
+            Message:
+            ${formData.message}
+            
+            Newsletter Subscription: ${formData.newsletter ? 'Yes' : 'No'}
+          `,
+          type: 'contact'
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Message Sent Successfully!",
+        description: "Thank you for contacting us. We'll get back to you within 24 hours.",
+      });
+      
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        subject: "",
+        package: "",
+        manuscript: "",
+        message: "",
+        newsletter: false
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const packages = ["Essential (₹25,000)", "Professional (₹45,000)", "Premium (₹75,000)", "Custom Package"];

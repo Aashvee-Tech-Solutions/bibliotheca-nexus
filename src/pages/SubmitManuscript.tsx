@@ -126,16 +126,50 @@ export default function SubmitManuscript() {
         samplePagesUrl = `${supabase.storage.from('manuscripts').getPublicUrl(samplePath).data.publicUrl}`;
       }
 
-      // Step 3: Create manuscript record (simplified for demo)
+      // Step 3: Create manuscript record
       setUploadProgress(75);
+      const { data: manuscript, error: insertError } = await supabase
+        .from('manuscripts')
+        .insert([{
+          title: formData.title,
+          genre: formData.genre,
+          synopsis: formData.synopsis,
+          word_count: parseInt(formData.wordCount) || null,
+          user_id: user.id,
+          manuscript_file_url: manuscriptUrl,
+          sample_pages_url: samplePagesUrl
+        }])
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
       
-      // For demonstration, we'll just show success
-      // In real implementation, database insert would happen here
+      // Step 4: Send email notification
+      setUploadProgress(85);
+      try {
+        await supabase.functions.invoke('send-contact-email', {
+          body: {
+            name: user?.user_metadata?.full_name || 'Unknown',
+            email: user?.email || 'unknown@email.com',
+            subject: `New Manuscript Submission: ${formData.title}`,
+            message: `
+              Title: ${formData.title}
+              Genre: ${formData.genre}
+              Word Count: ${formData.wordCount}
+              Synopsis: ${formData.synopsis}
+              
+              Files uploaded: ${formData.manuscriptFile ? 'Manuscript' : ''} ${formData.samplePages ? 'Sample Pages' : ''}
+            `,
+            type: 'manuscript'
+          }
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+      }
       
-      // Step 4: Run plagiarism check in background
+      // Step 5: Run plagiarism check in background
       setUploadProgress(90);
-      // For demo purposes, we'll use the synopsis as manuscript text
-      await checkPlagiarism(formData.synopsis, 'demo-manuscript-id');
+      await checkPlagiarism(formData.synopsis, manuscript.id);
 
       setUploadProgress(100);
 

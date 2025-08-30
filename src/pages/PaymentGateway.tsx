@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,37 +7,69 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, ArrowLeft, CreditCard, IndianRupee, Shield, Clock } from "lucide-react";
+import { ArrowLeft, Smartphone, Shield, Clock, CheckCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const PaymentGateway = () => {
   const { user } = useAuth();
-  const { bookId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   
   const [loading, setLoading] = useState(false);
-  const [paymentData, setPaymentData] = useState({
-    amount: 999,
-    bookTitle: "Sample Book",
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardHolder: "",
-    email: user?.email || "",
-    phone: ""
+  const [purchaseData, setPurchaseData] = useState<any>(null);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [bankDetails, setBankDetails] = useState({
+    accountNumber: "", // Will be used for phone number
+    accountHolderName: ""
   });
+
+  // Get purchase ID from URL params
+  const purchaseId = searchParams.get('purchaseId');
 
   useEffect(() => {
     if (!user) {
       navigate('/auth', { state: { from: { pathname: '/payment-gateway' } } });
+      return;
     }
-  }, [user, navigate]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPaymentData(prev => ({ ...prev, [name]: value }));
+    if (purchaseId) {
+      fetchPurchaseData();
+    }
+  }, [user, navigate, purchaseId]);
+
+  const fetchPurchaseData = async () => {
+    if (!purchaseId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('authorship_purchases')
+        .select(`
+          *,
+          upcoming_books (
+            title,
+            genre,
+            cover_image_url
+          )
+        `)
+        .eq('id', purchaseId)
+        .single();
+
+      if (error) throw error;
+
+      setPurchaseData(data);
+      setTotalAmount(data.total_amount);
+    } catch (error) {
+      console.error('Error fetching purchase data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load purchase data",
+        variant: "destructive"
+      });
+      navigate('/upcoming-books');
+    }
   };
 
   const handlePayment = async (e: React.FormEvent) => {
@@ -45,20 +77,41 @@ const PaymentGateway = () => {
     setLoading(true);
 
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Payment Successful!",
-        description: "Your book purchase has been completed. Check your email for download link.",
+      if (!bankDetails.accountNumber || !bankDetails.accountHolderName) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      if (bankDetails.accountNumber.length !== 10) {
+        throw new Error('Please enter a valid 10-digit phone number');
+      }
+
+      const response = await supabase.functions.invoke('phonepe-payment', {
+        body: {
+          purchase_id: purchaseId,
+          amount: totalAmount,
+          user_details: {
+            phone_number: bankDetails.accountNumber,
+            name: bankDetails.accountHolderName
+          }
+        }
       });
-      
-      // Redirect to success page or dashboard
-      navigate('/dashboard');
-    } catch (error) {
+
+      if (response.data?.success && response.data?.paymentUrl) {
+        toast({
+          title: "Redirecting to PhonePe",
+          description: "Please complete your payment on PhonePe"
+        });
+        
+        // Redirect to PhonePe payment page
+        window.location.href = response.data.paymentUrl;
+      } else {
+        throw new Error(response.data?.error || 'Payment initiation failed');
+      }
+    } catch (error: any) {
+      console.error('Payment error:', error);
       toast({
-        title: "Payment Failed",
-        description: "There was an error processing your payment. Please try again.",
+        title: "Payment Error",
+        description: error.message || "Failed to initiate payment",
         variant: "destructive"
       });
     } finally {
@@ -66,28 +119,18 @@ const PaymentGateway = () => {
     }
   };
 
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return v;
-    }
-  };
-
-  const formatExpiryDate = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    if (v.length >= 2) {
-      return v.substring(0, 2) + '/' + v.substring(2, 4);
-    }
-    return v;
-  };
+  if (!purchaseData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <Header />
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading payment details...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
@@ -105,48 +148,63 @@ const PaymentGateway = () => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
-            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CreditCard className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Smartphone className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold">Secure Payment</h1>
+            <h1 className="text-3xl font-bold">PhonePe Payment</h1>
             <p className="text-muted-foreground mt-2">
-              Complete your book purchase securely
+              Complete your authorship purchase securely with PhonePe
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid gap-8">
             {/* Order Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+                <CardTitle>Purchase Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span>Book: {paymentData.bookTitle}</span>
-                  <span className="font-semibold">₹{paymentData.amount}</span>
+                <div className="flex items-center gap-4">
+                  {purchaseData.upcoming_books?.cover_image_url && (
+                    <img
+                      src={purchaseData.upcoming_books.cover_image_url}
+                      alt={purchaseData.upcoming_books.title}
+                      className="w-16 h-20 object-cover rounded"
+                    />
+                  )}
+                  <div>
+                    <h3 className="font-semibold">{purchaseData.upcoming_books?.title}</h3>
+                    <p className="text-sm text-muted-foreground">{purchaseData.upcoming_books?.genre}</p>
+                    <Badge variant="secondary" className="mt-1">
+                      Position {purchaseData.position_purchased}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b">
-                  <span>Processing Fee</span>
-                  <span className="font-semibold">₹29</span>
-                </div>
-                <div className="flex justify-between items-center py-2 text-lg font-bold">
-                  <span>Total Amount</span>
-                  <span className="text-primary">₹{paymentData.amount + 29}</span>
+                
+                <div className="space-y-2 pt-4 border-t">
+                  <div className="flex justify-between">
+                    <span>Author Position {purchaseData.position_purchased}</span>
+                    <span>₹{totalAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total Amount</span>
+                    <span className="text-primary">₹{totalAmount.toLocaleString()}</span>
+                  </div>
                 </div>
                 
                 {/* Security Features */}
                 <div className="mt-6 space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Shield className="w-4 h-4 text-green-500" />
-                    <span>256-bit SSL encryption</span>
+                    <span>Secure PhonePe payment gateway</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Shield className="w-4 h-4 text-green-500" />
-                    <span>PCI DSS compliant</span>
+                    <CheckCircle className="w-4 h-4 text-blue-500" />
+                    <span>Instant confirmation</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4 text-blue-500" />
-                    <span>Instant digital delivery</span>
+                    <Clock className="w-4 h-4 text-orange-500" />
+                    <span>Position reserved for 15 minutes</span>
                   </div>
                 </div>
               </CardContent>
@@ -157,96 +215,35 @@ const PaymentGateway = () => {
               <CardHeader>
                 <CardTitle>Payment Details</CardTitle>
                 <CardDescription>
-                  Enter your payment information to complete the purchase
+                  Enter your details to proceed with PhonePe payment
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handlePayment} className="space-y-4">
-                  {/* Card Information */}
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="cardNumber">Card Number</Label>
+                      <Label htmlFor="phone-number">Phone Number *</Label>
                       <Input
-                        id="cardNumber"
-                        name="cardNumber"
-                        placeholder="1234 5678 9012 3456"
-                        value={paymentData.cardNumber}
-                        onChange={(e) => {
-                          const formatted = formatCardNumber(e.target.value);
-                          setPaymentData(prev => ({ ...prev, cardNumber: formatted }));
-                        }}
-                        maxLength={19}
+                        id="phone-number"
+                        value={bankDetails.accountNumber}
+                        onChange={(e) => setBankDetails(prev => ({ ...prev, accountNumber: e.target.value }))}
+                        placeholder="Enter your 10-digit phone number"
+                        maxLength={10}
+                        pattern="[0-9]{10}"
                         required
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="expiryDate">Expiry Date</Label>
-                        <Input
-                          id="expiryDate"
-                          name="expiryDate"
-                          placeholder="MM/YY"
-                          value={paymentData.expiryDate}
-                          onChange={(e) => {
-                            const formatted = formatExpiryDate(e.target.value);
-                            setPaymentData(prev => ({ ...prev, expiryDate: formatted }));
-                          }}
-                          maxLength={5}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="cvv">CVV</Label>
-                        <Input
-                          id="cvv"
-                          name="cvv"
-                          placeholder="123"
-                          value={paymentData.cvv}
-                          onChange={handleInputChange}
-                          maxLength={4}
-                          required
-                        />
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        This phone number will be used for PhonePe payment
+                      </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="cardHolder">Cardholder Name</Label>
+                      <Label htmlFor="holder-name">Full Name *</Label>
                       <Input
-                        id="cardHolder"
-                        name="cardHolder"
-                        placeholder="John Doe"
-                        value={paymentData.cardHolder}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {/* Contact Information */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="font-semibold">Contact Information</h3>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="your@email.com"
-                        value={paymentData.email}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        placeholder="+91 98765 43210"
-                        value={paymentData.phone}
-                        onChange={handleInputChange}
+                        id="holder-name"
+                        value={bankDetails.accountHolderName}
+                        onChange={(e) => setBankDetails(prev => ({ ...prev, accountHolderName: e.target.value }))}
+                        placeholder="Enter your full name"
                         required
                       />
                     </div>
@@ -262,12 +259,12 @@ const PaymentGateway = () => {
                     {loading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Processing Payment...
+                        Initiating Payment...
                       </>
                     ) : (
                       <>
-                        <CreditCard className="w-5 h-5 mr-2" />
-                        Pay ₹{paymentData.amount + 29}
+                        <Smartphone className="w-5 h-5 mr-2" />
+                        Pay ₹{totalAmount.toLocaleString()} with PhonePe
                       </>
                     )}
                   </Button>
@@ -294,12 +291,12 @@ const PaymentGateway = () => {
               <span className="text-sm font-medium">Secure Payment</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <BookOpen className="w-8 h-8 text-blue-500" />
-              <span className="text-sm font-medium">Instant Access</span>
+              <Smartphone className="w-8 h-8 text-blue-500" />
+              <span className="text-sm font-medium">PhonePe Powered</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <IndianRupee className="w-8 h-8 text-primary" />
-              <span className="text-sm font-medium">Best Price</span>
+              <CheckCircle className="w-8 h-8 text-primary" />
+              <span className="text-sm font-medium">Instant Confirmation</span>
             </div>
           </div>
         </div>

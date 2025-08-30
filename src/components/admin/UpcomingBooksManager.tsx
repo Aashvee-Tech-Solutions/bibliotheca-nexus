@@ -263,6 +263,24 @@ export const UpcomingBooksManager = () => {
     if (!confirm('Are you sure you want to delete this book?')) return;
 
     try {
+      // First check if there are any purchases for this book
+      const { data: purchases, error: purchaseError } = await supabase
+        .from('authorship_purchases')
+        .select('id')
+        .eq('upcoming_book_id', bookId)
+        .limit(1);
+
+      if (purchaseError) throw purchaseError;
+
+      if (purchases && purchases.length > 0) {
+        toast({
+          title: "Cannot Delete",
+          description: "This book has existing purchases and cannot be deleted.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('upcoming_books')
         .delete()
