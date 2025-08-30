@@ -1,179 +1,178 @@
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Star, Filter } from "lucide-react";
-import { useState } from "react";
+import { BookOpen, ArrowRight, Star, IndianRupee } from "lucide-react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Book {
+  id: string;
+  title: string;
+  author_name: string;
+  genre: string;
+  description: string;
+  cover_image_url: string;
+  price: number;
+  pages: number;
+  publication_date: string;
+  language: string;
+  isbn: string;
+  slug: string;
+}
 
 const Books = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const books = [
-    {
-      id: 1,
-      title: "Industrial Intelligence: IoT and Machine Learning in the Age of IIoT",
-      authors: ["Dr. Yalla Venkate", "Arunkumar Beyyala", "V Saipriya"],
-      image: "/lovable-uploads/3815e5af-90e4-4ec8-91f0-ae967ba64457.png",
-      category: "Technology",
-      rating: 4.8,
-      description: "A comprehensive guide to Industrial Intelligence, exploring IoT and Machine Learning applications in modern industrial settings.",
-      price: "₹650",
-      isbn: "978-81-973291-1-1"
-    },
-    {
-      id: 2,
-      title: "Deep Learning for IoT: From Data to Decision",
-      authors: ["Surendranath Kalagara", "P Hemanth Raj Vardhan"],
-      image: "/lovable-uploads/0fcb646b-06d4-45cf-8829-38531cd653de.png",
-      category: "AI & ML",
-      rating: 4.9,
-      description: "An in-depth exploration of deep learning techniques applied to IoT systems, covering data processing to decision-making.",
-      price: "₹950",
-      isbn: "978-81-973291-2-2"
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  const fetchBooks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setBooks(data || []);
+    } catch (error) {
+      console.error('Error fetching books:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  const categories = ["all", "Technology", "AI & ML", "Engineering", "Computer Science"];
-
-  const filteredBooks = books.filter(book => {
-    const matchesSearch = book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         book.authors.some(author => author.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === "all" || book.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       {/* Hero Section */}
-      <section className="py-16 bg-gradient-to-r from-brand-primary/10 to-brand-accent/10">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Our Publications
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Discover cutting-edge research and knowledge from leading experts in technology and engineering.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Search and Filter */}
-      <section className="py-8 border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search books or authors..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground" />
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category === "all" ? "All Categories" : category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                {filteredBooks.length} book{filteredBooks.length !== 1 ? 's' : ''} found
-              </div>
-            </div>
+      <section className="py-20 bg-gradient-to-r from-brand-primary to-brand-secondary text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">Our Publications</h1>
+          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
+            Discover our collection of high-quality academic and professional publications
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/submit">
+              <Button size="lg" variant="secondary">
+                Submit Your Manuscript
+              </Button>
+            </Link>
+            <Link to="/upcoming-books">
+              <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-brand-primary">
+                View Upcoming Books
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Books Grid */}
-      <section className="py-12">
+      <section className="py-20">
         <div className="container mx-auto px-4">
-          {filteredBooks.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">No books found matching your criteria.</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredBooks.map((book) => (
-                <Card key={book.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 group">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Available Books</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Browse our collection of published books across various academic and professional fields
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-8">Loading books...</div>
+          ) : books.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {books.map((book) => (
+                <Card key={book.id} className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
                   <div className="aspect-[3/4] overflow-hidden">
-                    <img 
-                      src={book.image} 
-                      alt={book.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {book.cover_image_url ? (
+                      <img 
+                        src={book.cover_image_url} 
+                        alt={book.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                        <BookOpen className="w-16 h-16 text-muted-foreground" />
+                      </div>
+                    )}
                   </div>
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="secondary">{book.category}</Badge>
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-medium ml-1">{book.rating}</span>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="secondary">{book.genre}</Badge>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                       </div>
                     </div>
-                    <CardTitle className="text-lg leading-tight line-clamp-2">
-                      {book.title}
-                    </CardTitle>
-                    <CardDescription className="text-sm">
-                      By {book.authors.join(", ")}
-                    </CardDescription>
+                    <CardTitle className="text-lg mb-2 leading-tight line-clamp-2">{book.title}</CardTitle>
+                    <div className="text-sm text-muted-foreground mb-3">
+                      By {book.author_name}
+                    </div>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                      {book.description}
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                      {book.description || "A comprehensive publication covering important topics in the field."}
                     </p>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="text-lg font-bold text-brand-primary">{book.price}</div>
-                      <div className="text-xs text-muted-foreground">ISBN: {book.isbn}</div>
-                    </div>
+                    {book.price && (
+                      <div className="flex items-center text-lg font-bold text-brand-primary mb-4">
+                        <IndianRupee className="w-4 h-4" />
+                        {book.price.toLocaleString()}
+                      </div>
+                    )}
                     <div className="flex gap-2">
-                      <Button className="flex-1" size="sm">
-                        View Details
-                      </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="flex-1">
                         Preview
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => window.open('/payment-gateway', '_blank')}
+                      >
+                        Buy Now
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
+          ) : (
+            <div className="text-center py-12">
+              <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-xl font-semibold mb-2">No Books Found</h3>
+              <p className="text-muted-foreground">Check back soon for new publications!</p>
+            </div>
           )}
         </div>
       </section>
 
       {/* Call to Action */}
-      <section className="py-16 bg-gradient-to-r from-brand-primary to-brand-secondary text-white">
+      <section className="py-20 bg-gradient-to-r from-brand-primary to-brand-secondary text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Want to Publish Your Book?
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Ready to Share Your Knowledge?
           </h2>
-          <p className="text-lg mb-6 opacity-90">
-            Join our growing list of published authors and share your knowledge with the world.
+          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
+            Join hundreds of authors who have trusted AASHVEE Publishers to bring their ideas to life.
           </p>
-          <Button size="lg" variant="secondary">
-            Start Publishing
-          </Button>
+          <Link to="/contact">
+            <Button size="lg" variant="secondary">
+              Start Publishing
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </Link>
         </div>
       </section>
+      
       <Footer />
     </div>
   );

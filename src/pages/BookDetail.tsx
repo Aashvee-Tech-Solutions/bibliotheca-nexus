@@ -232,12 +232,13 @@ const BookDetail = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button size="lg" className="flex-1">
-                <Download className="w-5 h-5 mr-2" />
-                Purchase & Download
+              <Button size="lg" className="flex-1" onClick={() => window.open('/payment-gateway', '_blank')}>
+                <IndianRupee className="w-5 h-5 mr-2" />
+                Buy Now - ₹{book.price?.toLocaleString()}
               </Button>
               <Button size="lg" variant="outline" className="flex-1">
-                Add to Wishlist
+                <Download className="w-5 h-5 mr-2" />
+                Preview Sample
               </Button>
             </div>
 

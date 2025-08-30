@@ -20,6 +20,7 @@ import Purchase from "./pages/Purchase";
 import Dashboard from "./pages/Dashboard";
 import BookDetail from "./pages/BookDetail";
 import UpcomingBookDetail from "./pages/UpcomingBookDetail";
+import PaymentGateway from "./pages/PaymentGateway";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/upcoming-book/:slug" element={<UpcomingBookDetail />} />
             <Route path="/book/:slug" element={<BookDetail />} />
             <Route path="/purchase/:bookId" element={<Purchase />} />
+            <Route path="/payment-gateway" element={<PaymentGateway />} />
             <Route path="/dashboard" element={<Dashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
