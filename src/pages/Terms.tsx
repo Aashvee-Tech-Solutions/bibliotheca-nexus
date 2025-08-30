@@ -1,6 +1,4 @@
 import Header from "@/components/Header";
-import Terms from "./pages/Terms";
-
 
 const Terms = () => {
   return (
