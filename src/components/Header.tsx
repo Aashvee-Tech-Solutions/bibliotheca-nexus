@@ -133,12 +133,82 @@ const Header = () => {
                   <span>{item.name}</span>
                 </Link>
               ))}
-              <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="outline" size="sm" className="w-full justify-start">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Admin Dashboard
-                </Button>
-              </Link>
+              
+              {/* Auth-based mobile navigation */}
+              {!loading && (
+                <>
+                  {user ? (
+                    <div className="space-y-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          navigate('/submit');
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Submit Manuscript
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          navigate('/dashboard');
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </Button>
+                      
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            navigate('/admin');
+                            setIsMenuOpen(false);
+                          }}
+                        >
+                          <Settings className="w-4 h-4 mr-2" />
+                          Admin Dashboard
+                        </Button>
+                      )}
+                      
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          signOut();
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        navigate('/auth');
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Sign In
+                    </Button>
+                  )}
+                </>
+              )}
             </nav>
           </div>
         )}

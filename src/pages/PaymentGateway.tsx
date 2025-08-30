@@ -11,6 +11,7 @@ import { ArrowLeft, Smartphone, Shield, Clock, CheckCircle } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PaymentService } from "@/lib/paymentService";
 
 const PaymentGateway = () => {
   const { user } = useAuth();
@@ -81,37 +82,59 @@ const PaymentGateway = () => {
         throw new Error('Please fill in all required fields');
       }
 
-      if (bankDetails.accountNumber.length !== 10) {
-        throw new Error('Please enter a valid 10-digit phone number');
+      // Validate phone number format
+      const phoneRegex = /^[6-9]\d{9}$/;
+      if (!phoneRegex.test(bankDetails.accountNumber)) {
+        throw new Error('Please enter a valid 10-digit phone number starting with 6, 7, 8, or 9');
       }
 
-      const response = await supabase.functions.invoke('phonepe-payment', {
-        body: {
-          purchase_id: purchaseId,
-          amount: totalAmount,
-          user_details: {
-            phone_number: bankDetails.accountNumber,
-            name: bankDetails.accountHolderName
-          }
-        }
+      // Validate name
+      if (bankDetails.accountHolderName.trim().length < 2) {
+        throw new Error('Please enter a valid full name');
+      }
+
+      // Check if user is authenticated
+      if (!user) {
+        throw new Error('Please sign in to continue with payment');
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Authentication session expired. Please sign in again.');
+      }
+
+      toast({
+        title: "Initiating Payment",
+        description: "Setting up secure payment with PhonePe..."
       });
 
-      if (response.data?.success && response.data?.paymentUrl) {
+      const response = await PaymentService.initiatePhonePePayment(
+        purchaseId!,
+        totalAmount,
+        {
+          phone_number: bankDetails.accountNumber,
+          name: bankDetails.accountHolderName
+        }
+      );
+
+      if (response.success && response.paymentUrl) {
         toast({
           title: "Redirecting to PhonePe",
-          description: "Please complete your payment on PhonePe"
+          description: "Please complete your payment on PhonePe. Do not close this window."
         });
         
-        // Redirect to PhonePe payment page
-        window.location.href = response.data.paymentUrl;
+        // Small delay to ensure toast is visible
+        setTimeout(() => {
+          window.location.href = response.paymentUrl!;
+        }, 1000);
       } else {
-        throw new Error(response.data?.error || 'Payment initiation failed');
+        throw new Error(response.error || response.message || 'Failed to generate payment URL');
       }
     } catch (error: any) {
       console.error('Payment error:', error);
       toast({
         title: "Payment Error",
-        description: error.message || "Failed to initiate payment",
+        description: error.message || "Failed to initiate payment. Please try again.",
         variant: "destructive"
       });
     } finally {

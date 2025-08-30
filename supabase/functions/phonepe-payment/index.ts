@@ -7,6 +7,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Utility function to validate phone number
+function validatePhoneNumber(phone: string): boolean {
+  const phoneRegex = /^[6-9]\d{9}$/;
+  return phoneRegex.test(phone);
+}
+
+// Utility function to sanitize inputs
+function sanitizeInput(input: string): string {
+  return input.trim().replace(/[<>"'&]/g, '');
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -19,8 +30,32 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authorization header missing');
+    }
+
     const { purchase_id, amount, user_details } = await req.json();
     const { phone_number, name } = user_details;
+
+    // Validate inputs
+    if (!purchase_id || !amount || !phone_number || !name) {
+      throw new Error('Missing required parameters');
+    }
+
+    if (!validatePhoneNumber(phone_number)) {
+      throw new Error('Invalid phone number format');
+    }
+
+    if (amount <= 0 || amount > 500000) { // Max 5 lakh INR
+      throw new Error('Invalid amount');
+    }
+
+    const sanitizedName = sanitizeInput(name);
+    if (sanitizedName.length < 2) {
+      throw new Error('Invalid name');
+    }
 
     console.log('Processing PhonePe payment for purchase:', purchase_id, 'Amount:', amount);
 
@@ -86,26 +121,42 @@ serve(async (req) => {
       throw new Error(`PhonePe payment initiation failed: ${phonepeResult.message || 'Unknown error'}`);
     }
 
-    // Update the purchase record with payment details
+    // Verify purchase exists and user has permission
     const { data: purchaseData, error: fetchError } = await supabase
       .from('authorship_purchases')
-      .select('upcoming_book_id, position_purchased')
+      .select('*')
       .eq('id', purchase_id)
       .single();
 
     if (fetchError) {
-      throw fetchError;
+      throw new Error('Purchase not found or access denied');
     }
 
+    // Verify user owns this purchase (additional security check)
+    const { data: { user: authUser } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (!authUser || purchaseData.user_id !== authUser.id) {
+      throw new Error('Unauthorized access to purchase');
+    }
+
+    // Check if payment is already processed
+    if (purchaseData.payment_status === 'completed') {
+      throw new Error('Payment already completed for this purchase');
+    }
+
+    // Update the purchase record with payment details
     const { error: updateError } = await supabase
       .from('authorship_purchases')
       .update({
         payment_id: transactionId,
         payment_status: paymentStatus,
+        payment_method: 'phonepe',
         payment_details: JSON.stringify({
           phonepe_response: phonepeResult,
           merchant_transaction_id: transactionId,
-          amount: amount
+          amount: amount,
+          phone_number: phone_number,
+          customer_name: sanitizedName,
+          initiated_at: new Date().toISOString()
         })
       })
       .eq('id', purchase_id);
@@ -113,6 +164,19 @@ serve(async (req) => {
     if (updateError) {
       throw updateError;
     }
+
+    // Log payment initiation
+    await supabase.rpc('log_payment_event', {
+      p_purchase_id: purchase_id,
+      p_transaction_id: transactionId,
+      p_event_type: 'initiated',
+      p_event_data: {
+        amount: amount,
+        phone_number: phone_number,
+        payment_method: 'phonepe',
+        payment_url_generated: !!paymentUrl
+      }
+    });
 
     console.log('Payment initiated successfully:', transactionId);
 
