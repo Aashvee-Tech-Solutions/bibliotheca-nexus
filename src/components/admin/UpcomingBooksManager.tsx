@@ -208,17 +208,22 @@ export const UpcomingBooksManager = () => {
     }
 
     try {
+      const saveData = {
+        ...bookData,
+        position_pricing: bookData.position_pricing || []
+      };
+
       if (editingBook) {
         const { error } = await supabase
           .from('upcoming_books')
-          .update(bookData)
+          .update(saveData)
           .eq('id', editingBook.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('upcoming_books')
-          .insert([bookData]);
+          .insert([saveData]);
 
         if (error) throw error;
       }

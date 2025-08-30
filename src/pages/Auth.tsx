@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { BookOpen, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Footer from '@/components/Footer';
+import Header from '@/components/Header';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ export default function Auth() {
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = 'Email is invalid';
     }
     
     if (!formData.password) {
@@ -67,8 +68,7 @@ export default function Auth() {
       newErrors.confirmPassword = 'Passwords do not match';
     }
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const validateSignIn = () => {
@@ -82,46 +82,34 @@ export default function Auth() {
       newErrors.password = 'Password is required';
     }
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateSignIn()) return;
-    
+    const validationErrors = validateSignIn();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setIsLoading(true);
-    
+    setErrors({});
+
     try {
       const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          toast({
-            title: "Login Failed",
-            description: "Invalid email or password. Please try again.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Login Failed",
-            description: error.message,
-            variant: "destructive"
-          });
-        }
+        setErrors({ signin: error.message });
       } else {
         toast({
           title: "Welcome back!",
-          description: "You have been successfully logged in."
+          description: "You have successfully signed in.",
         });
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
+      setErrors({ signin: 'An unexpected error occurred' });
     } finally {
       setIsLoading(false);
     }
@@ -130,251 +118,301 @@ export default function Auth() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateSignUp()) return;
-    
+    const validationErrors = validateSignUp();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setIsLoading(true);
-    
+    setErrors({});
+
     try {
       const { error } = await signUp(formData.email, formData.password, formData.fullName);
       
       if (error) {
-        if (error.message.includes('User already registered')) {
-          toast({
-            title: "Account Exists",
-            description: "An account with this email already exists. Please try logging in.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Registration Failed",
-            description: error.message,
-            variant: "destructive"
-          });
-        }
+        setErrors({ signup: error.message });
       } else {
         toast({
-          title: "Account Created!",
-          description: "Your account has been created and you are now logged in."
+          title: "Account created!",
+          description: "Please check your email to verify your account.",
         });
-        // No need to clear form as user will be redirected automatically
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
+      setErrors({ signup: 'An unexpected error occurred' });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <BookOpen className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-primary">AASHVEE Publishers</h1>
-          </div>
-          <p className="text-muted-foreground">Welcome to our publishing platform</p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Access Your Account</CardTitle>
-            <CardDescription>
-              Sign in to your existing account or create a new one
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin" className="space-y-4">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signin-email"
-                        name="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="pl-10"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signin-password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
-                        className="pl-10 pr-10"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        disabled={isLoading}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    {errors.password && (
-                      <p className="text-sm text-destructive">{errors.password}</p>
-                    )}
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Signing in...' : 'Sign In'}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-name"
-                        name="fullName"
-                        type="text"
-                        placeholder="Enter your full name"
-                        className="pl-10"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    {errors.fullName && (
-                      <p className="text-sm text-destructive">{errors.fullName}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        name="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="pl-10"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Create a password"
-                        className="pl-10 pr-10"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        disabled={isLoading}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    {errors.password && (
-                      <p className="text-sm text-destructive">{errors.password}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm">Confirm Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-confirm"
-                        name="confirmPassword"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Confirm your password"
-                        className="pl-10"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    {errors.confirmPassword && (
-                      <p className="text-sm text-destructive">{errors.confirmPassword}</p>
-                    )}
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Creating account...' : 'Create Account'}
-                  </Button>
-                </form>
-
-                <Alert>
-                  <AlertDescription>
-                    By creating an account, you agree to submit manuscripts for review and publication consideration.
-                  </AlertDescription>
-                </Alert>
-              </TabsContent>
-            </Tabs>
-
-            <div className="mt-6 text-center">
-              <Button
-                variant="link"
-                onClick={() => navigate('/')}
-                className="text-sm text-muted-foreground"
-              >
-                ← Back to Home
-              </Button>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+      <Header />
+      
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-8 h-8 text-white" />
             </div>
-          </CardContent>
-        </Card>
+            <h1 className="text-3xl font-bold">Welcome to AASHVEE Publishers</h1>
+            <p className="text-muted-foreground mt-2">
+              Join our community of authors and researchers
+            </p>
+          </div>
+
+          <Card className="shadow-lg">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl text-center">Authentication</CardTitle>
+              <CardDescription className="text-center">
+                Sign in to your account or create a new one
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <Tabs defaultValue="signin" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signin">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="signin" className="space-y-4 mt-6">
+                  {/* Sign In Form */}
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signin-email"
+                          name="email"
+                          type="email"
+                          placeholder="Enter your email"
+                          className="pl-10"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      {errors.email && (
+                        <p className="text-sm text-destructive">{errors.email}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-password">Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signin-password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter your password"
+                          className="pl-10 pr-10"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          disabled={isLoading}
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      {errors.password && (
+                        <p className="text-sm text-destructive">{errors.password}</p>
+                      )}
+                    </div>
+
+                    {errors.signin && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{errors.signin}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          Signing In...
+                        </>
+                      ) : (
+                        'Sign In'
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="signup" className="space-y-4 mt-6">
+                  {/* Sign Up Form */}
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-name">Full Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-name"
+                          name="fullName"
+                          type="text"
+                          placeholder="Enter your full name"
+                          className="pl-10"
+                          value={formData.fullName}
+                          onChange={handleInputChange}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      {errors.fullName && (
+                        <p className="text-sm text-destructive">{errors.fullName}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-email"
+                          name="email"
+                          type="email"
+                          placeholder="Enter your email"
+                          className="pl-10"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      {errors.email && (
+                        <p className="text-sm text-destructive">{errors.email}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create a password"
+                          className="pl-10 pr-10"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          disabled={isLoading}
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      {errors.password && (
+                        <p className="text-sm text-destructive">{errors.password}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-confirm">Confirm Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-confirm"
+                          name="confirmPassword"
+                          type="password"
+                          placeholder="Confirm your password"
+                          className="pl-10"
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
+                          disabled={isLoading}
+                          required
+                        />
+                      </div>
+                      {errors.confirmPassword && (
+                        <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                      )}
+                    </div>
+
+                    {errors.signup && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{errors.signup}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          Creating Account...
+                        </>
+                      ) : (
+                        'Create Account'
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Additional Info */}
+          <div className="mt-8 text-center space-y-4">
+            <div className="bg-card rounded-lg p-4 border">
+              <h3 className="font-semibold mb-2">Why Join AASHVEE Publishers?</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Professional Publishing</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Global Distribution</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Expert Editorial Team</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>Co-authorship Options</span>
+                </div>
+              </div>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              By signing up, you agree to our{' '}
+              <Link to="/terms" className="text-primary hover:underline">
+                Terms & Conditions
+              </Link>{' '}
+              and{' '}
+              <Link to="/privacy" className="text-primary hover:underline">
+                Privacy Policy
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
+      
       <Footer />
     </div>
   );

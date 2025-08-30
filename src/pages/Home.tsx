@@ -273,7 +273,7 @@ const Home = () => {
                         {new Date(book.publication_date).toLocaleDateString()}
                       </div>
                     )}
-                    <Link to={`/purchase/${book.id}`}>
+                    <Link to={`/upcoming-book/${book.slug || book.id}`}>
                       <Button size="sm" className="w-full" disabled={book.available_positions === 0}>
                         {book.available_positions > 0 ? "Join as Co-Author" : "Sold Out"}
                       </Button>
