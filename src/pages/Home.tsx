@@ -74,24 +74,7 @@ const Home = () => {
     }
   ];
 
-  const featuredBooks = [
-    {
-      id: 1,
-      title: "Industrial Intelligence: IoT and Machine Learning in the Age of IIoT",
-      authors: ["Dr. Yalla Venkate", "Arunkumar Beyyala", "V Saipriya"],
-      image: "/lovable-uploads/3815e5af-90e4-4ec8-91f0-ae967ba64457.png",
-      category: "Technology",
-      rating: 4.8
-    },
-    {
-      id: 2,
-      title: "Deep Learning for IoT: From Data to Decision",
-      authors: ["Surendranath Kalagara", "P Hemanth Raj Vardhan"],
-      image: "/lovable-uploads/0fcb646b-06d4-45cf-8829-38531cd653de.png",
-      category: "AI & ML",
-      rating: 4.9
-    }
-  ];
+ 
 
   return (
     <div className="min-h-screen bg-background">
@@ -138,11 +121,6 @@ const Home = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Featured Publications</h2>
               <p className="text-xl text-muted-foreground">Discover our latest academic and technical publications</p>
             </div>
-            <Link to="/books">
-              <Button variant="outline">
-                View All Books
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
             </Link>
           </div>
 
