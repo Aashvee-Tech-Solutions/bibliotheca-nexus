@@ -253,7 +253,6 @@ const Home = () => {
       <div>
         <h4 className="font-semibold mb-3">Quick Links</h4>
         <ul className="space-y-2 text-sm opacity-75">
-          <li><Link to="/books" className="hover:opacity-100">Books</Link></li>
           <li><Link to="/authors" className="hover:opacity-100">Authors</Link></li>
           <li><Link to="/packages" className="hover:opacity-100">Packages</Link></li>
           <li><Link to="/terms" className="hover:opacity-100">Terms & Conditions</Link></li>
