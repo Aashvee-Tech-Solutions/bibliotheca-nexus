@@ -14,7 +14,7 @@ const Terms = () => {
               <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Acceptance of Terms</h2>
               <p>
                 By accessing and using Aashvee Publishers' services, you accept and agree to be bound by the terms and provisions of this agreement. 
-                <strong className="text-foreground"> AASHVEE Publishers is the publishing imprint of AASHVEE Tech Solutions Pvt. Ltd.</strong> 
+                <strong className="text-foreground"> Aashvee Publishers is the publishing imprint of Aashvee Tech Solutions Pvt. Ltd.</strong> 
                 If you do not agree to abide by the above, please do not use this service.
               </p>
             </section>
