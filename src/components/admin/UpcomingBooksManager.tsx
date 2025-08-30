@@ -23,14 +23,43 @@ interface UpcomingBook {
   publication_date: string;
   status: string;
   copy_allocation: any;
+  position_pricing: any;
   purchased_positions?: any[];
 }
 
 const defaultPricingStructure = {
-  "1": { price: 16000, copies: 2, positions: [{ position: 1, price: 16000 }] },
-  "2": { price_structure: [10000, 9000], copies: 4, positions: [{ position: 1, price: 10000 }, { position: 2, price: 9000 }] },
-  "3": { price_structure: [8000, 7000, 6000], copies: 6, positions: [{ position: 1, price: 8000 }, { position: 2, price: 7000 }, { position: 3, price: 6000 }] },
-  "4": { price_structure: [7000, 6000, 5000, 4000], copies: 8, positions: [{ position: 1, price: 7000 }, { position: 2, price: 6000 }, { position: 3, price: 5000 }, { position: 4, price: 4000 }] }
+  "1": { 
+    price: 16000, 
+    copies: 2, 
+    positions: [{ position: 1, price: 16000 }] 
+  },
+  "2": { 
+    price_structure: [10000, 9000], 
+    copies: 4, 
+    positions: [
+      { position: 1, price: 10000 }, 
+      { position: 2, price: 9000 }
+    ] 
+  },
+  "3": { 
+    price_structure: [8000, 7000, 6000], 
+    copies: 6, 
+    positions: [
+      { position: 1, price: 8000 }, 
+      { position: 2, price: 7000 }, 
+      { position: 3, price: 6000 }
+    ] 
+  },
+  "4": { 
+    price_structure: [7000, 6000, 5000, 4000], 
+    copies: 8, 
+    positions: [
+      { position: 1, price: 7000 }, 
+      { position: 2, price: 6000 }, 
+      { position: 3, price: 5000 }, 
+      { position: 4, price: 4000 }
+    ] 
+  }
 };
 
 export const UpcomingBooksManager = () => {
@@ -50,7 +79,8 @@ export const UpcomingBooksManager = () => {
     price_per_position: 16000,
     publication_date: "",
     status: "active",
-    copy_allocation: defaultPricingStructure
+    copy_allocation: defaultPricingStructure,
+    position_pricing: defaultPricingStructure["1"].positions
   });
 
   useEffect(() => {
@@ -143,19 +173,23 @@ export const UpcomingBooksManager = () => {
     const pricing = book.copy_allocation[positions.toString()];
     if (pricing) {
       const price = pricing.price || pricing.price_structure[0];
+      const positionPricing = pricing.positions || [];
+      
       if (editingBook) {
         setEditingBook({
           ...editingBook,
           total_author_positions: positions,
           available_positions: positions,
-          price_per_position: price
+          price_per_position: price,
+          position_pricing: positionPricing
         });
       } else {
         setNewBook({
           ...newBook,
           total_author_positions: positions,
           available_positions: positions,
-          price_per_position: price
+          price_per_position: price,
+          position_pricing: positionPricing
         });
       }
     }
@@ -206,7 +240,8 @@ export const UpcomingBooksManager = () => {
         price_per_position: 16000,
         publication_date: "",
         status: "active",
-        copy_allocation: defaultPricingStructure
+        copy_allocation: defaultPricingStructure,
+        position_pricing: defaultPricingStructure["1"].positions
       });
       fetchBooks();
     } catch (error) {
@@ -373,38 +408,66 @@ export const UpcomingBooksManager = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="cover">Cover Image</Label>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    id="cover"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploading}
-                  />
-                  {uploading && <span className="text-sm text-muted-foreground">Uploading...</span>}
-                </div>
-                {currentBook.cover_image_url && (
-                  <div className="mt-2">
-                    <img 
-                      src={currentBook.cover_image_url} 
-                      alt="Cover preview" 
-                      className="w-32 h-40 object-cover rounded border"
-                    />
+                  {/* Position-wise custom pricing */}
+                  <div className="col-span-2 space-y-2">
+                    <Label>Position-Specific Pricing</Label>
+                    <div className="space-y-2">
+                      {currentBook.position_pricing?.map((pos: any, idx: number) => (
+                        <div key={idx} className="flex items-center space-x-2 p-2 border rounded">
+                          <Label className="min-w-[80px]">Position {pos.position}:</Label>
+                          <Input
+                            type="number"
+                            value={pos.price}
+                            onChange={(e) => {
+                              const newPricing = [...(currentBook.position_pricing || [])];
+                              newPricing[idx].price = parseFloat(e.target.value) || 0;
+                              if (editingBook) {
+                                setEditingBook({...editingBook, position_pricing: newPricing});
+                              } else {
+                                setNewBook({...newBook, position_pricing: newPricing});
+                              }
+                            }}
+                            placeholder="Price"
+                            className="flex-1"
+                          />
+                          <span className="text-sm text-muted-foreground">₹</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveBook}>
-                <Save className="w-4 h-4 mr-2" />
-                {editingBook ? 'Update' : 'Create'} Book
-              </Button>
-            </div>
+                  
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="cover">Cover Image</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        id="cover"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploading}
+                      />
+                      {uploading && <span className="text-sm text-muted-foreground">Uploading...</span>}
+                    </div>
+                    {currentBook.cover_image_url && (
+                      <div className="mt-2">
+                        <img 
+                          src={currentBook.cover_image_url} 
+                          alt="Cover preview" 
+                          className="w-32 h-40 object-cover rounded border"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2 mt-4">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveBook}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {editingBook ? 'Update' : 'Create'} Book
+                  </Button>
+                </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -451,13 +514,13 @@ export const UpcomingBooksManager = () => {
                   </div>
                   
                   {/* Show position-wise pricing */}
-                  {book.copy_allocation && book.copy_allocation[book.total_author_positions.toString()]?.positions && (
+                  {(book.position_pricing || book.copy_allocation?.[book.total_author_positions.toString()]?.positions) && (
                     <div className="text-xs space-y-1">
                       <div className="font-medium text-muted-foreground">Position Pricing:</div>
-                      {book.copy_allocation[book.total_author_positions.toString()].positions.map((pos: any, idx: number) => {
+                      {(book.position_pricing || book.copy_allocation[book.total_author_positions.toString()].positions).map((pos: any, idx: number) => {
                         const isPurchased = book.purchased_positions?.some((purchase: any) => 
                           purchase.payment_status === 'completed' && 
-                          purchase.positions_purchased === pos.position
+                          purchase.position_purchased === pos.position
                         );
                         return (
                           <div key={idx} className="flex justify-between items-center">

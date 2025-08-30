@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookOpen, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import Footer from '@/components/Footer';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -374,6 +375,7 @@ export default function Auth() {
           </CardContent>
         </Card>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -18,18 +18,19 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { purchaseId, amount, phoneNumber, bankAccount, ifsc, name } = await req.json();
+    const { purchase_id, amount, bank_details } = await req.json();
+    const { account_number, ifsc_code, bank_name, account_holder_name } = bank_details;
 
-    console.log('Processing Cashfree payment for purchase:', purchaseId, 'Amount:', amount);
+    console.log('Processing Cashfree payment for purchase:', purchase_id, 'Amount:', amount);
 
     // Cashfree Payment Integration
     const cashfreeUrl = 'https://sandbox.cashfree.com/verification/bank-account/sync';
     
     const cashfreePayload = {
-      bank_account: bankAccount,
-      ifsc: ifsc,
-      name: name,
-      phone: phoneNumber
+      bank_account: account_number,
+      ifsc: ifsc_code,
+      name: account_holder_name,
+      phone: "9999999999" // Default phone for verification
     };
 
     const cashfreeHeaders = {
@@ -65,6 +66,16 @@ serve(async (req) => {
     }
 
     // Update the purchase record with payment details
+    const { data: purchaseData, error: fetchError } = await supabase
+      .from('authorship_purchases')
+      .select('upcoming_book_id, position_purchased')
+      .eq('id', purchase_id)
+      .single();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
     const { error: updateError } = await supabase
       .from('authorship_purchases')
       .update({
@@ -76,7 +87,7 @@ serve(async (req) => {
           bank_name: cashfreeResult.bank_name
         })
       })
-      .eq('id', purchaseId);
+      .eq('id', purchase_id);
 
     if (updateError) {
       throw updateError;
