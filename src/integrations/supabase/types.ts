@@ -132,6 +132,7 @@ export type Database = {
           pages: number | null
           price: number | null
           publication_date: string | null
+          slug: string | null
           status: string | null
           title: string
           updated_at: string
@@ -149,6 +150,7 @@ export type Database = {
           pages?: number | null
           price?: number | null
           publication_date?: string | null
+          slug?: string | null
           status?: string | null
           title: string
           updated_at?: string
@@ -166,6 +168,7 @@ export type Database = {
           pages?: number | null
           price?: number | null
           publication_date?: string | null
+          slug?: string | null
           status?: string | null
           title?: string
           updated_at?: string
@@ -327,6 +330,7 @@ export type Database = {
           position_pricing: Json | null
           price_per_position: number
           publication_date: string | null
+          slug: string | null
           status: string
           title: string
           total_author_positions: number
@@ -343,6 +347,7 @@ export type Database = {
           position_pricing?: Json | null
           price_per_position: number
           publication_date?: string | null
+          slug?: string | null
           status?: string
           title: string
           total_author_positions?: number
@@ -359,6 +364,7 @@ export type Database = {
           position_pricing?: Json | null
           price_per_position?: number
           publication_date?: string | null
+          slug?: string | null
           status?: string
           title?: string
           total_author_positions?: number
@@ -392,6 +398,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_slug: {
+        Args: { title: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
