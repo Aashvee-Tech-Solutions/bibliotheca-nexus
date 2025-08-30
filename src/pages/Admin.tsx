@@ -27,6 +27,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { UpcomingBooksManager } from "@/components/admin/UpcomingBooksManager";
+import { CouponManager } from "@/components/admin/CouponManager";
 
 const Admin = () => {
   const { user, isAdmin, loading } = useAuth();
@@ -341,12 +343,14 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
-          <TabsList className="grid w-full grid-cols-5 bg-white/10 backdrop-blur-sm rounded-xl p-1">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Overview</TabsTrigger>
-            <TabsTrigger value="manuscripts" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Manuscripts</TabsTrigger>
-            <TabsTrigger value="books" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Books</TabsTrigger>
-            <TabsTrigger value="authors" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Authors</TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:text-gray-900">Analytics</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-7 bg-white/10 backdrop-blur-sm rounded-xl p-1">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs">Overview</TabsTrigger>
+            <TabsTrigger value="manuscripts" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs">Manuscripts</TabsTrigger>
+            <TabsTrigger value="books" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs">Books</TabsTrigger>
+            <TabsTrigger value="upcoming-books" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs">Upcoming</TabsTrigger>
+            <TabsTrigger value="coupons" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs">Coupons</TabsTrigger>
+            <TabsTrigger value="authors" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs">Authors</TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs">Analytics</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -904,6 +908,16 @@ const Admin = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Upcoming Books Tab */}
+          <TabsContent value="upcoming-books" className="space-y-6">
+            <UpcomingBooksManager />
+          </TabsContent>
+
+          {/* Coupons Tab */}
+          <TabsContent value="coupons" className="space-y-6">
+            <CouponManager />
           </TabsContent>
 
           {/* Analytics Tab */}

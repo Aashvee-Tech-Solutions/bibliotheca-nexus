@@ -56,8 +56,11 @@ export type Database = {
       authorship_purchases: {
         Row: {
           bio: string | null
+          coupon_code: string | null
           created_at: string
+          discount_amount: number | null
           id: string
+          payment_details: Json | null
           payment_id: string | null
           payment_status: string
           phone_number: string | null
@@ -70,8 +73,11 @@ export type Database = {
         }
         Insert: {
           bio?: string | null
+          coupon_code?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
+          payment_details?: Json | null
           payment_id?: string | null
           payment_status?: string
           phone_number?: string | null
@@ -84,8 +90,11 @@ export type Database = {
         }
         Update: {
           bio?: string | null
+          coupon_code?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
+          payment_details?: Json | null
           payment_id?: string | null
           payment_status?: string
           phone_number?: string | null
@@ -167,6 +176,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      coupon_codes: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
       }
       manuscripts: {
         Row: {
@@ -264,6 +315,7 @@ export type Database = {
       upcoming_books: {
         Row: {
           available_positions: number
+          copy_allocation: Json | null
           cover_image_url: string | null
           created_at: string
           description: string | null
@@ -278,6 +330,7 @@ export type Database = {
         }
         Insert: {
           available_positions?: number
+          copy_allocation?: Json | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -292,6 +345,7 @@ export type Database = {
         }
         Update: {
           available_positions?: number
+          copy_allocation?: Json | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
