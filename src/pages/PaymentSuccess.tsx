@@ -42,7 +42,9 @@ const PaymentSuccess = () => {
       const result = await PaymentService.checkPaymentStatus(txnId!);
       
       if (result.success) {
-        setPaymentStatus(result.paymentStatus);
+        // Map 'completed' to 'success' for UI state
+        const mappedStatus = result.paymentStatus === 'completed' ? 'success' : result.paymentStatus;
+        setPaymentStatus(mappedStatus as 'loading' | 'success' | 'failed' | 'pending');
         setTransactionDetails(result.phonepeResponse);
         
         // Fetch purchase details
@@ -103,7 +105,6 @@ const PaymentSuccess = () => {
   const getStatusIcon = () => {
     switch (paymentStatus) {
       case 'success':
-      case 'completed':
         return <CheckCircle className="w-16 h-16 text-green-500" />;
       case 'failed':
         return <XCircle className="w-16 h-16 text-red-500" />;
@@ -117,7 +118,6 @@ const PaymentSuccess = () => {
   const getStatusTitle = () => {
     switch (paymentStatus) {
       case 'success':
-      case 'completed':
         return "Payment Successful!";
       case 'failed':
         return "Payment Failed";
@@ -131,7 +131,6 @@ const PaymentSuccess = () => {
   const getStatusDescription = () => {
     switch (paymentStatus) {
       case 'success':
-      case 'completed':
         return "Congratulations! Your authorship position has been successfully secured.";
       case 'failed':
         return "Unfortunately, your payment could not be processed. Please try again.";
@@ -197,7 +196,7 @@ const PaymentSuccess = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                {paymentStatus === 'completed' && (
+                {paymentStatus === 'success' && (
                   <Button 
                     onClick={() => navigate('/dashboard')}
                     className="flex-1"

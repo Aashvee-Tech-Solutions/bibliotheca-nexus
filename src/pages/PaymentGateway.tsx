@@ -23,8 +23,10 @@ const PaymentGateway = () => {
   const [purchaseData, setPurchaseData] = useState<any>(null);
   const [totalAmount, setTotalAmount] = useState(0);
   const [bankDetails, setBankDetails] = useState({
-    accountNumber: "", // Will be used for phone number
-    accountHolderName: ""
+    account_number: "",
+    ifsc_code: "",
+    bank_name: "",
+    account_holder_name: user?.user_metadata?.full_name || ""
   });
 
   // Get purchase ID from URL params
@@ -78,57 +80,47 @@ const PaymentGateway = () => {
     setLoading(true);
 
     try {
-      if (!bankDetails.accountNumber || !bankDetails.accountHolderName) {
-        throw new Error('Please fill in all required fields');
+      // Validate bank details
+      if (!bankDetails.account_number || !bankDetails.ifsc_code || 
+          !bankDetails.bank_name || !bankDetails.account_holder_name) {
+        throw new Error('Please fill in all bank details');
       }
 
-      // Validate phone number format
-      const phoneRegex = /^[6-9]\d{9}$/;
-      if (!phoneRegex.test(bankDetails.accountNumber)) {
-        throw new Error('Please enter a valid 10-digit phone number starting with 6, 7, 8, or 9');
+      // Validate IFSC code format
+      const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+      if (!ifscRegex.test(bankDetails.ifsc_code)) {
+        throw new Error('Please enter a valid IFSC code (e.g., SBIN0001234)');
       }
 
-      // Validate name
-      if (bankDetails.accountHolderName.trim().length < 2) {
-        throw new Error('Please enter a valid full name');
-      }
-
-      // Check if user is authenticated
-      if (!user) {
-        throw new Error('Please sign in to continue with payment');
-      }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Authentication session expired. Please sign in again.');
+      // Validate account number
+      if (bankDetails.account_number.length < 9 || bankDetails.account_number.length > 18) {
+        throw new Error('Please enter a valid account number (9-18 digits)');
       }
 
       toast({
-        title: "Initiating Payment",
-        description: "Setting up secure payment with PhonePe..."
+        title: "Verifying Bank Details",
+        description: "Processing your payment with Cashfree..."
       });
 
-      const response = await PaymentService.initiatePhonePePayment(
+      // Initiate Cashfree payment
+      const response = await PaymentService.initiateCashfreePayment(
         purchaseId!,
         totalAmount,
-        {
-          phone_number: bankDetails.accountNumber,
-          name: bankDetails.accountHolderName
-        }
+        bankDetails
       );
 
-      if (response.success && response.paymentUrl) {
+      if (response.success) {
         toast({
-          title: "Redirecting to PhonePe",
-          description: "Please complete your payment on PhonePe. Do not close this window."
+          title: "Payment Successful",
+          description: response.message || "Bank verification successful"
         });
         
-        // Small delay to ensure toast is visible
+        // Redirect to success page
         setTimeout(() => {
-          window.location.href = response.paymentUrl!;
-        }, 1000);
+          navigate(`/payment-success?txnId=${response.paymentId}`);
+        }, 1500);
       } else {
-        throw new Error(response.error || response.message || 'Failed to generate payment URL');
+        throw new Error(response.error || 'Payment initiation failed');
       }
     } catch (error: any) {
       console.error('Payment error:', error);
@@ -174,9 +166,9 @@ const PaymentGateway = () => {
             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Smartphone className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold">PhonePe Payment</h1>
+            <h1 className="text-3xl font-bold">Secure Payment</h1>
             <p className="text-muted-foreground mt-2">
-              Complete your authorship purchase securely with PhonePe
+              Complete your authorship purchase securely with Cashfree
             </p>
           </div>
 
@@ -219,7 +211,7 @@ const PaymentGateway = () => {
                 <div className="mt-6 space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Shield className="w-4 h-4 text-green-500" />
-                    <span>Secure PhonePe payment gateway</span>
+                    <span>Secure Cashfree payment gateway</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CheckCircle className="w-4 h-4 text-blue-500" />
@@ -236,37 +228,59 @@ const PaymentGateway = () => {
             {/* Payment Form */}
             <Card>
               <CardHeader>
-                <CardTitle>Payment Details</CardTitle>
+                <CardTitle>Bank Account Details</CardTitle>
                 <CardDescription>
-                  Enter your details to proceed with PhonePe payment
+                  Enter your bank details for secure Cashfree verification
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handlePayment} className="space-y-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone-number">Phone Number *</Label>
+                      <Label htmlFor="account-holder">Account Holder Name *</Label>
                       <Input
-                        id="phone-number"
-                        value={bankDetails.accountNumber}
-                        onChange={(e) => setBankDetails(prev => ({ ...prev, accountNumber: e.target.value }))}
-                        placeholder="Enter your 10-digit phone number"
-                        maxLength={10}
-                        pattern="[0-9]{10}"
+                        id="account-holder"
+                        value={bankDetails.account_holder_name}
+                        onChange={(e) => setBankDetails(prev => ({ ...prev, account_holder_name: e.target.value }))}
+                        placeholder="Enter account holder name"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="account-number">Account Number *</Label>
+                      <Input
+                        id="account-number"
+                        value={bankDetails.account_number}
+                        onChange={(e) => setBankDetails(prev => ({ ...prev, account_number: e.target.value.replace(/\D/g, '') }))}
+                        placeholder="Enter your bank account number"
+                        maxLength={18}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="ifsc-code">IFSC Code *</Label>
+                      <Input
+                        id="ifsc-code"
+                        value={bankDetails.ifsc_code}
+                        onChange={(e) => setBankDetails(prev => ({ ...prev, ifsc_code: e.target.value.toUpperCase() }))}
+                        placeholder="e.g., SBIN0001234"
+                        maxLength={11}
                         required
                       />
                       <p className="text-xs text-muted-foreground">
-                        This phone number will be used for PhonePe payment
+                        11-character bank IFSC code
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="holder-name">Full Name *</Label>
+                      <Label htmlFor="bank-name">Bank Name *</Label>
                       <Input
-                        id="holder-name"
-                        value={bankDetails.accountHolderName}
-                        onChange={(e) => setBankDetails(prev => ({ ...prev, accountHolderName: e.target.value }))}
-                        placeholder="Enter your full name"
+                        id="bank-name"
+                        value={bankDetails.bank_name}
+                        onChange={(e) => setBankDetails(prev => ({ ...prev, bank_name: e.target.value }))}
+                        placeholder="Enter your bank name"
                         required
                       />
                     </div>
@@ -282,12 +296,12 @@ const PaymentGateway = () => {
                     {loading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Initiating Payment...
+                        Verifying Bank Details...
                       </>
                     ) : (
                       <>
-                        <Smartphone className="w-5 h-5 mr-2" />
-                        Pay ₹{totalAmount.toLocaleString()} with PhonePe
+                        <Shield className="w-5 h-5 mr-2" />
+                        Verify & Pay ₹{totalAmount.toLocaleString()}
                       </>
                     )}
                   </Button>
@@ -315,7 +329,7 @@ const PaymentGateway = () => {
             </div>
             <div className="flex flex-col items-center gap-2">
               <Smartphone className="w-8 h-8 text-blue-500" />
-              <span className="text-sm font-medium">PhonePe Powered</span>
+              <span className="text-sm font-medium">Cashfree Powered</span>
             </div>
             <div className="flex flex-col items-center gap-2">
               <CheckCircle className="w-8 h-8 text-primary" />

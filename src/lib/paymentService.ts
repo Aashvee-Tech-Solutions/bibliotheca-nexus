@@ -144,65 +144,48 @@ export class PaymentService {
   }
 
   /**
-   * Get payment analytics (admin only)
+   * Process Cashfree payment with bank verification
    */
-  static async getPaymentAnalytics() {
-    try {
-      const { data, error } = await supabase
-        .from('payment_analytics')
-        .select('*')
-        .order('payment_date', { ascending: false })
-        .limit(30);
-
-      if (error) {
-        throw error;
-      }
-
-      return {
-        success: true,
-        data,
-        message: 'Analytics retrieved successfully'
-      };
-    } catch (error: any) {
-      console.error('Analytics retrieval error:', error);
-      return {
-        success: false,
-        data: null,
-        message: 'Failed to retrieve analytics'
-      };
+  static async initiateCashfreePayment(
+    purchaseId: string,
+    amount: number,
+    bankDetails: {
+      account_number: string;
+      ifsc_code: string;
+      bank_name: string;
+      account_holder_name: string;
     }
-  }
-
-  /**
-   * Get payment logs for a purchase (admin only)
-   */
-  static async getPaymentLogs(purchaseId: string) {
+  ): Promise<PaymentResponse> {
     try {
-      if (!purchaseId) {
-        throw new Error('Purchase ID is required');
+      // Validate inputs
+      if (!purchaseId || !amount || !bankDetails.account_number || !bankDetails.ifsc_code) {
+        throw new Error('Missing required payment details');
       }
 
-      const { data, error } = await supabase
-        .from('payment_logs')
-        .select('*')
-        .eq('purchase_id', purchaseId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
+      // Validate amount
+      if (amount <= 0 || amount > 500000) {
+        throw new Error('Invalid payment amount');
       }
 
-      return {
-        success: true,
-        data,
-        message: 'Payment logs retrieved successfully'
-      };
+      const response = await supabase.functions.invoke('payment-processor', {
+        body: {
+          purchase_id: purchaseId,
+          amount: amount,
+          bank_details: bankDetails
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Payment service error');
+      }
+
+      return response.data as PaymentResponse;
     } catch (error: any) {
-      console.error('Payment logs retrieval error:', error);
+      console.error('Payment initiation error:', error);
       return {
         success: false,
-        data: null,
-        message: 'Failed to retrieve payment logs'
+        message: 'Payment initiation failed',
+        error: error.message
       };
     }
   }

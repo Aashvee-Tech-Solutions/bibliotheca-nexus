@@ -75,16 +75,17 @@ const PurchaseBook = () => {
         throw new Error('Please enter a valid 10-digit phone number starting with 6, 7, 8, or 9');
       }
 
-      // Create a book purchase record
+      // Create a purchase record in authorship_purchases for now
+      // This will be used for book purchases as well
       const { data: purchase, error: purchaseError } = await supabase
-        .from('book_purchases')
+        .from('authorship_purchases')
         .insert([{
-          book_id: purchaseData.bookId,
+          upcoming_book_id: purchaseData.bookId,
           user_id: user.id,
           total_amount: purchaseData.price,
           payment_status: 'pending',
-          payment_method: 'phonepe',
-          purchase_type: 'direct_book'
+          positions_purchased: 1,
+          phone_number: userDetails.phone_number
         }])
         .select()
         .single();
