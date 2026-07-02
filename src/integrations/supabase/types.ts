@@ -10,49 +10,10 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      authors: {
-        Row: {
-          bio: string | null
-          books_published: number | null
-          created_at: string
-          featured: boolean | null
-          id: string
-          name: string
-          profile_image_url: string | null
-          social_links: Json | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          bio?: string | null
-          books_published?: number | null
-          created_at?: string
-          featured?: boolean | null
-          id?: string
-          name: string
-          profile_image_url?: string | null
-          social_links?: Json | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          bio?: string | null
-          books_published?: number | null
-          created_at?: string
-          featured?: boolean | null
-          id?: string
-          name?: string
-          profile_image_url?: string | null
-          social_links?: Json | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       authorship_purchases: {
         Row: {
           bio: string | null
@@ -60,11 +21,14 @@ export type Database = {
           created_at: string
           discount_amount: number | null
           id: string
+          payment_completed_at: string | null
           payment_details: Json | null
           payment_id: string | null
+          payment_initiated_at: string | null
+          payment_method: string | null
           payment_status: string
           phone_number: string | null
-          position_purchased: number | null
+          position_purchased: number
           positions_purchased: number
           profile_image_url: string | null
           total_amount: number
@@ -78,11 +42,14 @@ export type Database = {
           created_at?: string
           discount_amount?: number | null
           id?: string
+          payment_completed_at?: string | null
           payment_details?: Json | null
           payment_id?: string | null
+          payment_initiated_at?: string | null
+          payment_method?: string | null
           payment_status?: string
           phone_number?: string | null
-          position_purchased?: number | null
+          position_purchased?: number
           positions_purchased?: number
           profile_image_url?: string | null
           total_amount: number
@@ -96,11 +63,14 @@ export type Database = {
           created_at?: string
           discount_amount?: number | null
           id?: string
+          payment_completed_at?: string | null
           payment_details?: Json | null
           payment_id?: string | null
+          payment_initiated_at?: string | null
+          payment_method?: string | null
           payment_status?: string
           phone_number?: string | null
-          position_purchased?: number | null
+          position_purchased?: number
           positions_purchased?: number
           profile_image_url?: string | null
           total_amount?: number
@@ -118,9 +88,68 @@ export type Database = {
           },
         ]
       }
+      book_purchases: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          payment_completed_at: string | null
+          payment_details: Json | null
+          payment_id: string | null
+          payment_initiated_at: string | null
+          payment_method: string
+          payment_status: string
+          purchase_type: string
+          shipping_address: Json | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          payment_completed_at?: string | null
+          payment_details?: Json | null
+          payment_id?: string | null
+          payment_initiated_at?: string | null
+          payment_method?: string
+          payment_status?: string
+          purchase_type?: string
+          shipping_address?: Json | null
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          payment_completed_at?: string | null
+          payment_details?: Json | null
+          payment_id?: string | null
+          payment_initiated_at?: string | null
+          payment_method?: string
+          payment_status?: string
+          purchase_type?: string
+          shipping_address?: Json | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_purchases_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
-          author_name: string
+          author_name: string | null
           cover_image_url: string | null
           created_at: string
           description: string | null
@@ -128,17 +157,16 @@ export type Database = {
           id: string
           isbn: string | null
           language: string | null
-          manuscript_id: string | null
           pages: number | null
           price: number | null
           publication_date: string | null
           slug: string | null
-          status: string | null
+          status: string
           title: string
           updated_at: string
         }
         Insert: {
-          author_name: string
+          author_name?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -146,17 +174,16 @@ export type Database = {
           id?: string
           isbn?: string | null
           language?: string | null
-          manuscript_id?: string | null
           pages?: number | null
           price?: number | null
           publication_date?: string | null
           slug?: string | null
-          status?: string | null
+          status?: string
           title: string
           updated_at?: string
         }
         Update: {
-          author_name?: string
+          author_name?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -164,24 +191,15 @@ export type Database = {
           id?: string
           isbn?: string | null
           language?: string | null
-          manuscript_id?: string | null
           pages?: number | null
           price?: number | null
           publication_date?: string | null
           slug?: string | null
-          status?: string | null
+          status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "books_manuscript_id_fkey"
-            columns: ["manuscript_id"]
-            isOneToOne: false
-            referencedRelation: "manuscripts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       coupon_codes: {
         Row: {
@@ -227,17 +245,12 @@ export type Database = {
       }
       manuscripts: {
         Row: {
-          admin_notes: string | null
           created_at: string
           genre: string | null
           id: string
           manuscript_file_url: string | null
-          plagiarism_report_url: string | null
-          plagiarism_score: number | null
-          reviewed_at: string | null
           sample_pages_url: string | null
-          status: string | null
-          submitted_at: string
+          status: string
           synopsis: string | null
           title: string
           updated_at: string
@@ -245,17 +258,12 @@ export type Database = {
           word_count: number | null
         }
         Insert: {
-          admin_notes?: string | null
           created_at?: string
           genre?: string | null
           id?: string
           manuscript_file_url?: string | null
-          plagiarism_report_url?: string | null
-          plagiarism_score?: number | null
-          reviewed_at?: string | null
           sample_pages_url?: string | null
-          status?: string | null
-          submitted_at?: string
+          status?: string
           synopsis?: string | null
           title: string
           updated_at?: string
@@ -263,17 +271,12 @@ export type Database = {
           word_count?: number | null
         }
         Update: {
-          admin_notes?: string | null
           created_at?: string
           genre?: string | null
           id?: string
           manuscript_file_url?: string | null
-          plagiarism_report_url?: string | null
-          plagiarism_score?: number | null
-          reviewed_at?: string | null
           sample_pages_url?: string | null
-          status?: string | null
-          submitted_at?: string
+          status?: string
           synopsis?: string | null
           title?: string
           updated_at?: string
@@ -282,37 +285,61 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_logs: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          purchase_id: string
+          purchase_type: string | null
+          transaction_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          purchase_id: string
+          purchase_type?: string | null
+          transaction_id: string
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          purchase_id?: string
+          purchase_type?: string | null
+          transaction_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
-          bio: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
-          phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
-          bio?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
-          phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
-          bio?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
-          phone?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -345,7 +372,7 @@ export type Database = {
           genre?: string | null
           id?: string
           position_pricing?: Json | null
-          price_per_position: number
+          price_per_position?: number
           publication_date?: string | null
           slug?: string | null
           status?: string
@@ -377,41 +404,62 @@ export type Database = {
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
     }
     Views: {
-      [_ in never]: never
+      payment_analytics: {
+        Row: {
+          avg_amount: number | null
+          payment_date: string | null
+          payment_method: string | null
+          payment_status: string | null
+          purchase_type: string | null
+          total_amount: number | null
+          transaction_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      generate_slug: {
-        Args: { title: string }
-        Returns: string
-      }
+      generate_slug: { Args: { title: string }; Returns: string }
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
+          role_name: Database["public"]["Enums"]["app_role"]
+          user_id: string
         }
         Returns: boolean
       }
+      log_payment_event: {
+        Args: {
+          p_event_data?: Json
+          p_event_type: string
+          p_purchase_id: string
+          p_purchase_type?: string
+          p_transaction_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "admin" | "author" | "user"
+      app_role: "user" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -539,7 +587,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "author", "user"],
+      app_role: ["user", "admin"],
     },
   },
 } as const
